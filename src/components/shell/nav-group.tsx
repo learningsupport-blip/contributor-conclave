@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 
 import { CurrentLink } from "@/components/shell/current-link";
@@ -17,18 +17,13 @@ export function NavGroup({ label, items }: { label: string; items: NavLink[] }) 
   const pathname = usePathname();
   const current = containsCurrent(pathname, items);
   const [open, setOpen] = useState(current);
-
-  useEffect(() => {
-    if (current) {
-      setOpen(true);
-    }
-  }, [current]);
+  const expanded = open || current;
 
   return (
     <li>
       <button
         type="button"
-        aria-expanded={open}
+        aria-expanded={expanded}
         onClick={() => setOpen((value) => !value)}
         className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-ink/80 dark:text-paper/80 ${buttonCorners} ${focusRing}`}
       >
@@ -36,9 +31,9 @@ export function NavGroup({ label, items }: { label: string; items: NavLink[] }) 
           <ShieldIcon />
           {label}
         </span>
-        <Chevron open={open} />
+        <Chevron open={expanded} />
       </button>
-      {open ? (
+      {expanded ? (
         <ul className="mt-1 ml-4 flex flex-col gap-1 border-l border-ink/15 pl-2 dark:border-paper/20">
           {items.map((item) => (
             <li key={item.href}>

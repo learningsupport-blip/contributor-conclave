@@ -49,12 +49,13 @@ function logsHref(query: LogQuery, patch: Partial<LogQuery> = {}): string {
 
 export function LogsDashboard({ initial, query }: { initial: LogsDashboard; query: LogQuery }) {
   const [data, setData] = useState(initial);
+  const [source, setSource] = useState(initial);
+  if (source !== initial) {
+    setSource(initial);
+    setData(initial);
+  }
   const captionId = useId();
   const search = serializeLogQuery(query);
-
-  useEffect(() => {
-    setData(initial);
-  }, [initial]);
 
   useEffect(() => {
     let ignore = false;

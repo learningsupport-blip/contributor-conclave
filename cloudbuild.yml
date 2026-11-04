@@ -12,6 +12,7 @@ substitutions:
   _DATABASE_SECRET: contributor-conclave-database-url
   _GITHUB_TOKEN_SECRET: contributor-conclave-github-token
   _MESSAGE_KEY_SECRET: contributor-conclave-message-key
+  _SUPERADMIN_PASSWORD_SECRET: contributor-conclave-superadmin-password
   _MIN_INSTANCES: "0"
   _MAX_INSTANCES: "10"
   _CONCURRENCY: "40"
@@ -207,7 +208,7 @@ steps:
           --max-instances ${_MAX_INSTANCES} \
           --concurrency ${_CONCURRENCY} \
           --set-cloudsql-instances "$$INSTANCE" \
-          --set-secrets "DATABASE_URL=${_DATABASE_SECRET}:latest,GITHUB_TOKEN=${_GITHUB_TOKEN_SECRET}:latest,MESSAGE_ENCRYPTION_KEY=${_MESSAGE_KEY_SECRET}:latest" \
+          --set-secrets "DATABASE_URL=${_DATABASE_SECRET}:latest,GITHUB_TOKEN=${_GITHUB_TOKEN_SECRET}:latest,MESSAGE_ENCRYPTION_KEY=${_MESSAGE_KEY_SECRET}:latest,SUPERADMIN_PASSWORD=${_SUPERADMIN_PASSWORD_SECRET}:latest" \
           --allow-unauthenticated \
           --ingress all \
           --quiet

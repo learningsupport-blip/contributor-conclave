@@ -91,6 +91,7 @@ A Cloud Build trigger runs `cloudbuild.yml` on a push to the production branch. 
 | `_DATABASE_SECRET` | `contributor-conclave-database-url` | Secret Manager id for the Cloud SQL URL |
 | `_GITHUB_TOKEN_SECRET` | `contributor-conclave-github-token` | Secret Manager id for the GitHub token |
 | `_MESSAGE_KEY_SECRET` | `contributor-conclave-message-key` | Secret Manager id for message encryption |
+| `_SUPERADMIN_PASSWORD_SECRET` | `contributor-conclave-superadmin-password` | Secret Manager id for the initial super admin password |
 | `_MIN_INSTANCES` | `0` | Cloud Run minimum instances |
 | `_MAX_INSTANCES` | `10` | Cloud Run maximum instances. Keep this inside the Cloud SQL connection budget |
 | `_CONCURRENCY` | `40` | Requests accepted per instance |
@@ -275,6 +276,7 @@ Store these in Secret Manager and mount them as Cloud Run environment variables 
 | `DATABASE_URL` | Web service and the one-shot migration job |
 | `GITHUB_TOKEN` | Web service |
 | `MESSAGE_ENCRYPTION_KEY` | Web service |
+| `SUPERADMIN_PASSWORD` | Web service, only to create the super admin on first start |
 
 Local values live only in `.env`. `.env.example` documents the variable names and the local Docker URL. A Cloud SQL URL does not belong in that file.
 

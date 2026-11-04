@@ -7,6 +7,8 @@ export function SelectField({
   options,
   required = false,
   defaultValue,
+  value,
+  onChange,
   errors,
 }: {
   id: string;
@@ -15,6 +17,8 @@ export function SelectField({
   options: { value: string; label: string }[];
   required?: boolean;
   defaultValue?: string;
+  value?: string;
+  onChange?: (value: string) => void;
   errors?: string[];
 }) {
   const errorId = `${id}-error`;
@@ -29,7 +33,8 @@ export function SelectField({
         id={id}
         name={name}
         required={required}
-        defaultValue={defaultValue}
+        {...(value === undefined ? { defaultValue } : { value })}
+        onChange={onChange ? (event) => onChange(event.target.value) : undefined}
         aria-invalid={messages.length > 0 ? true : undefined}
         aria-describedby={messages.length > 0 ? errorId : undefined}
         className={controlClass}

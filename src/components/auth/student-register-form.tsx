@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { registerStudentAction } from "@/app/actions/auth";
 import { Field } from "@/components/auth/field";
@@ -12,10 +12,13 @@ export function StudentRegisterForm({
   batches,
 }: {
   universities: { id: string; name: string; location: string }[];
-  batches: { id: string; year: string }[];
+  batches: { id: string; year: string; universityId: string | null }[];
 }) {
   const [state, action, pending] = useActionState(registerStudentAction, undefined);
+  const [universityId, setUniversityId] = useState("");
+  const [batchId, setBatchId] = useState("");
   const errors = state?.fieldErrors;
+  const batchesForUniversity = batches.filter((batch) => batch.universityId === universityId);
 
   return (
     <form action={action} className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
@@ -28,7 +31,11 @@ export function StudentRegisterForm({
         name="universityId"
         label="University"
         required
-        defaultValue=""
+        value={universityId}
+        onChange={(next) => {
+          setUniversityId(next);
+          setBatchId("");
+        }}
         options={[
           { value: "", label: universities.length > 0 ? "Choose a university" : "No universities yet" },
           ...universities.map((university) => ({
@@ -43,10 +50,18 @@ export function StudentRegisterForm({
         name="batchId"
         label="Batch"
         required
-        defaultValue=""
+        value={batchId}
+        onChange={setBatchId}
         options={[
-          { value: "", label: batches.length > 0 ? "Choose a batch" : "No batches yet" },
-          ...batches.map((batch) => ({ value: batch.id, label: batch.year })),
+          {
+            value: "",
+            label: universityId
+              ? batchesForUniversity.length > 0
+                ? "Choose a batch"
+                : "No batches for this university"
+              : "Choose a university first",
+          },
+          ...batchesForUniversity.map((batch) => ({ value: batch.id, label: batch.year })),
         ]}
         errors={errors?.batchId}
       />

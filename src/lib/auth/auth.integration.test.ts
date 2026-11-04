@@ -101,7 +101,7 @@ beforeEach(async () => {
     data: { name: universityName, location: "Hyderabad", createdById: owner.id },
   });
   const batch = await db.batch.create({
-    data: { year: batchYear, totalStudents: 40, createdById: owner.id },
+    data: { year: batchYear, totalStudents: 40, createdById: owner.id, universityId: university.id },
   });
   universityId = university.id;
   batchId = batch.id;
@@ -122,8 +122,8 @@ afterEach(async () => {
       where: { batchRef: { createdById: { in: userIds } } },
       data: { batchId: null },
     });
-    await db.university.deleteMany({ where: { createdById: { in: userIds } } });
     await db.batch.deleteMany({ where: { createdById: { in: userIds } } });
+    await db.university.deleteMany({ where: { createdById: { in: userIds } } });
   }
   await db.user.deleteMany({
     where: { email: { endsWith: "@auth-test.example" } },

@@ -13,6 +13,7 @@ class CatalogChoiceError extends Error {
   constructor(
     readonly missingUniversity: boolean,
     readonly missingBatch: boolean,
+    readonly mismatchedBatch = false,
   ) {
     super("catalog_choice");
   }
@@ -89,7 +90,9 @@ function registrationError(error: unknown): AuthFailure {
       status: 400,
       fieldErrors: {
         ...(error.missingUniversity ? { universityId: ["Choose a university."] } : {}),
-        ...(error.missingBatch ? { batchId: ["Choose a batch."] } : {}),
+        ...(error.missingBatch
+          ? { batchId: [error.mismatchedBatch ? "Choose a batch for this university." : "Choose a batch."] }
+          : {}),
       },
     };
   }
@@ -133,12 +136,13 @@ export async function registerStudent(
         }),
         tx.batch.findUnique({
           where: { id: input.batchId },
-          select: { id: true, year: true },
+          select: { id: true, year: true, universityId: true },
         }),
       ]);
 
-      if (!university || !academicBatch) {
-        throw new CatalogChoiceError(!university, !academicBatch);
+      const mismatchedBatch = Boolean(university && academicBatch && academicBatch.universityId !== university.id);
+      if (!university || !academicBatch || mismatchedBatch) {
+        throw new CatalogChoiceError(!university, !academicBatch || mismatchedBatch, mismatchedBatch);
       }
 
       await tx.studentProfile.create({

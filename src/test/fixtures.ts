@@ -85,11 +85,20 @@ export async function removeFixtures(domain: string, stackPrefix: string) {
       data: { universityId: null },
     });
     await db.studentProfile.updateMany({
-      where: { batchRef: { createdById: { in: userIds } } },
+      where: {
+        OR: [
+          { batchRef: { createdById: { in: userIds } } },
+          { batchRef: { university: { createdById: { in: userIds } } } },
+        ],
+      },
       data: { batchId: null },
     });
+    await db.batch.deleteMany({
+      where: {
+        OR: [{ createdById: { in: userIds } }, { university: { createdById: { in: userIds } } }],
+      },
+    });
     await db.university.deleteMany({ where: { createdById: { in: userIds } } });
-    await db.batch.deleteMany({ where: { createdById: { in: userIds } } });
     await db.applicationRequestLog.deleteMany({
       where: {
         OR: [{ userId: { in: userIds } }, { actorEmail: { endsWith: domain } }],

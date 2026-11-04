@@ -14,6 +14,7 @@ export const universitySchema = z.object({
 });
 
 export const batchSchema = z.object({
+  universityId: z.uuid({ error: "Choose a university." }),
   year: z
     .string()
     .trim()

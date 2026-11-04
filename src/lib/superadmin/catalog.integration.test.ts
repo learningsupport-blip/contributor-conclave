@@ -37,25 +37,41 @@ describe("universities and batches", () => {
       name: `NIAT ${suffix}`,
       location: "Hyderabad",
     });
-    const batch = await createBatch(superadminId, { year: suffix, totalStudents: 80 });
-
     expect(university.ok).toBe(true);
+    if (!university.ok) {
+      return;
+    }
+    const batch = await createBatch(superadminId, {
+      universityId: university.data.id,
+      year: suffix,
+      totalStudents: 80,
+    });
+
     expect(batch.ok).toBe(true);
-    if (!university.ok || !batch.ok) {
+    if (!batch.ok) {
       return;
     }
 
     const universities = await listUniversities(superadminId);
     const batches = await listBatches(superadminId);
     expect(universities.ok && universities.data.some((item) => item.id === university.data.id)).toBe(true);
-    expect(batches.ok && batches.data.some((item) => item.id === batch.data.id && item.totalStudents === 80)).toBe(true);
+    expect(
+      batches.ok &&
+        batches.data.some(
+          (item) => item.id === batch.data.id && item.totalStudents === 80 && item.universityId === university.data.id,
+        ),
+    ).toBe(true);
 
     const duplicate = await createUniversity(superadminId, { name: `niat ${suffix}`, location: "Guntur" });
     expect(duplicate.ok).toBe(false);
   });
 
   it("rejects a catalog change from an admin", async () => {
-    const result = await createBatch(adminId, { year: "2097", totalStudents: 10 });
+    const result = await createBatch(adminId, {
+      universityId: "00000000-0000-4000-8000-000000000199",
+      year: "2097",
+      totalStudents: 10,
+    });
     expect(result.ok).toBe(false);
   });
 });

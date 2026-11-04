@@ -16,6 +16,8 @@ export type BatchRecord = {
   id: string;
   year: string;
   totalStudents: number;
+  universityId: string | null;
+  universityName: string | null;
 };
 
 function duplicate(error: Prisma.PrismaClientKnownRequestError, kind: "university" | "batch"): AdminError | null {
@@ -25,9 +27,9 @@ function duplicate(error: Prisma.PrismaClientKnownRequestError, kind: "universit
       name: ["A university with this name already exists."],
     });
   }
-  if (kind === "batch" && target.toLowerCase().includes("year")) {
-    return adminInvalid("A batch for this year already exists.", {
-      year: ["A batch for this year already exists."],
+  if (kind === "batch" && (target.toLowerCase().includes("year") || target.toLowerCase().includes("university"))) {
+    return adminInvalid("A batch for this year already exists at this university.", {
+      year: ["A batch for this year already exists at this university."],
     });
   }
   return null;
@@ -83,11 +85,26 @@ export async function listBatches(actorId: string): Promise<AdminSuccess<BatchRe
   }
 
   const batches = await db.batch.findMany({
-    orderBy: { year: "desc" },
+    orderBy: [{ year: "desc" }, { university: { name: "asc" } }],
     take: 200,
-    select: { id: true, year: true, totalStudents: true },
+    select: {
+      id: true,
+      year: true,
+      totalStudents: true,
+      universityId: true,
+      university: { select: { name: true } },
+    },
   });
-  return { ok: true, data: batches };
+  return {
+    ok: true,
+    data: batches.map((batch) => ({
+      id: batch.id,
+      year: batch.year,
+      totalStudents: batch.totalStudents,
+      universityId: batch.universityId,
+      universityName: batch.university?.name ?? null,
+    })),
+  };
 }
 
 export async function createBatch(
@@ -99,12 +116,28 @@ export async function createBatch(
     return actor;
   }
 
+  const university = await db.university.findUnique({
+    where: { id: input.universityId },
+    select: { id: true, name: true },
+  });
+  if (!university) {
+    return adminInvalid("Choose a university.", { universityId: ["Choose a university."] });
+  }
+
   try {
     const batch = await db.batch.create({
-      data: { year: input.year, totalStudents: input.totalStudents, createdById: actor.data.id },
-      select: { id: true, year: true, totalStudents: true },
+      data: {
+        year: input.year,
+        totalStudents: input.totalStudents,
+        universityId: university.id,
+        createdById: actor.data.id,
+      },
+      select: { id: true, year: true, totalStudents: true, universityId: true },
     });
-    return { ok: true, data: batch };
+    return {
+      ok: true,
+      data: { ...batch, universityName: university.name },
+    };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       const mapped = duplicate(error, "batch");
@@ -130,8 +163,17 @@ export async function registrationOptions(): Promise<{
     db.batch.findMany({
       orderBy: { year: "desc" },
       take: 200,
-      select: { id: true, year: true, totalStudents: true },
+      select: { id: true, year: true, totalStudents: true, universityId: true, university: { select: { name: true } } },
     }),
   ]);
-  return { universities, batches };
+  return {
+    universities,
+    batches: batches.map((batch) => ({
+      id: batch.id,
+      year: batch.year,
+      totalStudents: batch.totalStudents,
+      universityId: batch.universityId,
+      universityName: batch.university?.name ?? null,
+    })),
+  };
 }

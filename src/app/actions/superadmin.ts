@@ -197,6 +197,7 @@ export async function createBatchAction(
   const actor = await requireSuperAdmin();
   const startedAt = Date.now();
   const parsed = batchSchema.safeParse({
+    universityId: text(formData, "universityId"),
     year: text(formData, "year"),
     totalStudents: text(formData, "totalStudents"),
   });

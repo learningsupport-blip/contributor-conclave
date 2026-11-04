@@ -48,6 +48,7 @@ export async function seedE2E() {
       id: E2E_IDS.batch,
       year: "2026",
       totalStudents: 120,
+      universityId: E2E_IDS.university,
       createdById: E2E_IDS.admin,
     },
   });

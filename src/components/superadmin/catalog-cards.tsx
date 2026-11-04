@@ -8,6 +8,7 @@ import {
   type OrganisationFormState,
 } from "@/app/actions/superadmin";
 import { SubmitButton } from "@/components/auth/submit-button";
+import { SelectField } from "@/components/ui/select-field";
 import { TextField } from "@/components/ui/text-field";
 import { buttonCorners, focusRing } from "@/components/ui/styles";
 
@@ -59,7 +60,7 @@ function CreateCard({
         <h2 id={titleId} ref={titleRef} tabIndex={-1} className={`text-xl font-semibold ${focusRing}`}>
           {title}
         </h2>
-        <form ref={formRef} action={formAction} className="mt-6 flex flex-col gap-5 [&_input]:min-h-11" aria-label={title}>
+        <form ref={formRef} action={formAction} className="mt-6 flex flex-col gap-5 [&_input]:min-h-11 [&_select]:min-h-11" aria-label={title}>
           {children(fieldId, state)}
           {state?.formError ? (
             <p role="alert" className="text-sm text-red-700 dark:text-red-400">
@@ -97,11 +98,30 @@ export function CreateUniversityCard() {
   );
 }
 
-export function CreateBatchCard() {
+export function CreateBatchCard({
+  universities,
+}: {
+  universities: { id: string; name: string; location: string }[];
+}) {
   return (
     <CreateCard title="Create a Batch" action={createBatchAction}>
       {(fieldId, state) => (
         <>
+          <SelectField
+            id={`${fieldId}-university`}
+            name="universityId"
+            label="University"
+            required
+            defaultValue=""
+            options={[
+              { value: "", label: universities.length > 0 ? "Choose a university" : "Create a university first" },
+              ...universities.map((university) => ({
+                value: university.id,
+                label: `${university.name}, ${university.location}`,
+              })),
+            ]}
+            errors={state?.fieldErrors?.universityId}
+          />
           <TextField id={`${fieldId}-year`} name="year" label="Year" required inputMode="numeric" autoComplete="off" errors={state?.fieldErrors?.year} />
           <TextField
             id={`${fieldId}-total`}

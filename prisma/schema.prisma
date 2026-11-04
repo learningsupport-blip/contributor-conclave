@@ -508,23 +508,28 @@ model University {
 
   createdBy User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
   students  StudentProfile[]
+  batches   Batch[]
 
   @@index([createdById])
   @@map("universities")
 }
 
-/// A student batch identified by its year.
+/// A student batch for one university, identified by its year.
 model Batch {
   id            String   @id @default(uuid()) @db.Uuid
-  year          String   @unique
+  universityId  String?  @map("university_id") @db.Uuid
+  year          String
   totalStudents Int      @map("total_students")
   createdById   String   @map("created_by_id") @db.Uuid
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  createdBy User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
-  students  StudentProfile[]
+  university University?      @relation(fields: [universityId], references: [id], onDelete: Restrict)
+  createdBy  User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  students   StudentProfile[]
 
+  @@unique([universityId, year])
   @@index([createdById])
+  @@index([universityId])
   @@map("batches")
 }

@@ -11,7 +11,7 @@ export function StudentRegisterForm() {
   const errors = state?.fieldErrors;
 
   return (
-    <form action={action} className="flex w-full max-w-md flex-col gap-4">
+    <form action={action} className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
       <Field id="firstName" name="firstName" label="First name" autoComplete="given-name" errors={errors?.firstName} />
       <Field id="lastName" name="lastName" label="Last name" autoComplete="family-name" errors={errors?.lastName} />
       <Field id="email" name="email" label="Email" type="email" autoComplete="email" errors={errors?.email} />
@@ -19,14 +19,17 @@ export function StudentRegisterForm() {
       <Field id="batch" name="batch" label="Batch" autoComplete="off" errors={errors?.batch} />
       <Field id="universityName" name="universityName" label="University name" autoComplete="organization" errors={errors?.universityName} />
       <Field id="githubUsername" name="githubUsername" label="GitHub username" autoComplete="username" errors={errors?.githubUsername} />
+      <div className="hidden sm:block" />
       <Field id="password" name="password" label="Password" type="password" autoComplete="new-password" errors={errors?.password} />
       <Field id="confirmPassword" name="confirmPassword" label="Confirm password" type="password" autoComplete="new-password" errors={errors?.confirmPassword} />
       {state?.formError ? (
-        <p role="alert" className="text-sm text-red-700 dark:text-red-400">
+        <p role="alert" className="text-sm text-red-700 dark:text-red-400 sm:col-span-2">
           {state.formError}
         </p>
       ) : null}
-      <SubmitButton pending={pending}>Create student account</SubmitButton>
+      <div className="sm:col-span-2">
+        <SubmitButton pending={pending}>Create student account</SubmitButton>
+      </div>
     </form>
   );
 }

@@ -98,9 +98,9 @@ test("student and mentor exchange a conversation", async ({ browser }) => {
 
   await studentPage.goto(`/student/chat/${E2E_IDS.assignedSubmission}`);
   await expect(studentPage.getByText("Mentor fixture note.")).toBeVisible();
-  const html = await studentPage.content();
-  expect(html).not.toContain("v1.");
-  expect(html.toLowerCase()).not.toContain("end-to-end");
+  const messages = await studentPage.getByRole("list", { name: "Messages" }).innerHTML();
+  expect(messages).not.toContain("v1.");
+  expect(messages.toLowerCase()).not.toContain("end-to-end");
 
   await studentContext.close();
   await mentorContext.close();

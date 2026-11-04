@@ -9,6 +9,15 @@ import type {
   StudentRegistration,
 } from "@/lib/auth/validation";
 
+class CatalogChoiceError extends Error {
+  constructor(
+    readonly missingUniversity: boolean,
+    readonly missingBatch: boolean,
+  ) {
+    super("catalog_choice");
+  }
+}
+
 export type AuthFailure = {
   ok: false;
   status: 400 | 401 | 403 | 409 | 500;
@@ -74,6 +83,17 @@ function duplicateFailure(error: Prisma.PrismaClientKnownRequestError): AuthFail
 }
 
 function registrationError(error: unknown): AuthFailure {
+  if (error instanceof CatalogChoiceError) {
+    return {
+      ok: false,
+      status: 400,
+      fieldErrors: {
+        ...(error.missingUniversity ? { universityId: ["Choose a university."] } : {}),
+        ...(error.missingBatch ? { batchId: ["Choose a batch."] } : {}),
+      },
+    };
+  }
+
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
     return duplicateFailure(error);
   }
@@ -106,12 +126,30 @@ export async function registerStudent(
         select: publicUserSelect,
       });
 
+      const [university, academicBatch] = await Promise.all([
+        tx.university.findUnique({
+          where: { id: input.universityId },
+          select: { id: true, name: true },
+        }),
+        tx.batch.findUnique({
+          where: { id: input.batchId },
+          select: { id: true, year: true },
+        }),
+      ]);
+
+      if (!university || !academicBatch) {
+        throw new CatalogChoiceError(!university, !academicBatch);
+      }
+
       await tx.studentProfile.create({
         data: {
           userId: created.id,
           niatId: input.niatId,
-          batch: input.batch,
-          universityName: input.universityName,
+          batch: academicBatch.year,
+          universityName: university.name,
+          universityId: university.id,
+          batchId: academicBatch.id,
+          mobileNumber: input.mobileNumber,
         },
       });
 

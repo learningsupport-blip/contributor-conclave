@@ -18,6 +18,9 @@ describe("signed-in navigation", () => {
     expect(labels(items)).toEqual([
       "Overview",
       "Resource Management",
+      "General Management",
+      "University Management",
+      "Batch Management",
       "Application Access",
       "Application Managed Roles",
       "Application Managed Users",

@@ -16,9 +16,10 @@ test("student registration creates an account and opens the student workspace", 
   await page.getByLabel("Last name").fill("Student");
   await page.getByLabel("Email").fill("registered-student@e2e.test");
   await page.getByLabel("NIAT ID").fill("E2E-NIAT-REG");
-  await page.getByLabel("Batch").fill("E2E Batch");
-  await page.getByLabel("University name").fill("E2E University");
+  await page.getByLabel("University").selectOption("E2E University, Hyderabad");
+  await page.getByLabel("Batch").selectOption("2026");
   await page.getByLabel("GitHub username").fill("registeredstudent");
+  await page.getByLabel("Mobile number").fill("9876543210");
   await page.getByLabel("Password", { exact: true }).fill(E2E_PASSWORD);
   await page.getByLabel("Confirm password").fill(E2E_PASSWORD);
   await page.getByRole("button", { name: "Create student account" }).click();

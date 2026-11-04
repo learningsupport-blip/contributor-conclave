@@ -210,6 +210,7 @@ export type StudentAccount = {
   batch: string;
   universityName: string;
   githubUsername: string | null;
+  mobileNumber: string | null;
 };
 
 export type StudentOverviewLists = {
@@ -230,6 +231,7 @@ const accountSelect = {
   niatId: true,
   batch: true,
   universityName: true,
+  mobileNumber: true,
   user: {
     select: {
       firstName: true,
@@ -244,6 +246,7 @@ function toAccount(profile: {
   niatId: string;
   batch: string;
   universityName: string;
+  mobileNumber: string | null;
   user: {
     firstName: string;
     lastName: string;
@@ -259,6 +262,7 @@ function toAccount(profile: {
     batch: profile.batch,
     universityName: profile.universityName,
     githubUsername: profile.user.githubAccount?.username ?? null,
+    mobileNumber: profile.mobileNumber,
   };
 }
 

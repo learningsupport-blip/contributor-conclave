@@ -32,6 +32,29 @@ const identifierSchema = (label: string) =>
     .min(1, { error: `Enter a ${label}.` })
     .max(64, { error: `${label} must be 64 characters or fewer.` });
 
+export const mobileNumberSchema = z
+  .string()
+  .trim()
+  .min(1, { error: "Enter a mobile number." })
+  .transform((value) => value.replace(/[\s().-]/g, ""))
+  .pipe(z.string().regex(/^\+?\d+$/, { error: "Enter a 10-digit mobile number." }))
+  .transform((value) => {
+    const digits = value.startsWith("+") ? value.slice(1) : value;
+    if (digits.length === 12 && digits.startsWith("91")) {
+      return digits.slice(2);
+    }
+    if (digits.length === 11 && digits.startsWith("0")) {
+      return digits.slice(1);
+    }
+    return digits;
+  })
+  .pipe(
+    z
+      .string()
+      .regex(/^[6-9]\d{9}$/, { error: "Enter a 10-digit mobile number." })
+      .transform((digits) => `+91${digits}`),
+  );
+
 export const githubUsernameSchema = z
   .string()
   .trim()
@@ -65,9 +88,10 @@ export const studentRegistrationSchema = z
     lastName: nameSchema,
     email: emailSchema,
     niatId: identifierSchema("NIAT ID"),
-    batch: batchSchema,
-    universityName: universitySchema,
+    universityId: z.uuid({ error: "Choose a university." }),
+    batchId: z.uuid({ error: "Choose a batch." }),
     githubUsername: githubUsernameSchema,
+    mobileNumber: mobileNumberSchema,
     password: passwordSchema,
     confirmPassword: z.string(),
   })

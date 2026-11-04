@@ -42,6 +42,13 @@ const workspaceItems: Record<Role, NavItem[]> = {
     { href: "/superadmin", label: "Overview" },
     { href: "/superadmin/resources", label: "Resource Management", section: true },
     {
+      label: "General Management",
+      children: [
+        { href: "/superadmin/universities", label: "University Management", section: true },
+        { href: "/superadmin/batches", label: "Batch Management", section: true },
+      ],
+    },
+    {
       label: "Application Access",
       children: [
         { href: "/superadmin/roles", label: "Application Managed Roles", section: true },

@@ -21,6 +21,8 @@ export const E2E_IDS = {
   pendingSubmission: "00000000-0000-4000-8000-000000000020",
   assignedSubmission: "00000000-0000-4000-8000-000000000021",
   otherSubmission: "00000000-0000-4000-8000-000000000022",
+  university: "00000000-0000-4000-8000-000000000030",
+  batch: "00000000-0000-4000-8000-000000000031",
 } as const;
 
 export const E2E_USERS = {

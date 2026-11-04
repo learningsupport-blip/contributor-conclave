@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 
 import { requireSuperAdmin } from "@/lib/auth/authorization";
 import { toFieldErrors } from "@/lib/auth/validation";
+import { batchSchema, universitySchema } from "@/lib/superadmin/catalog-validation";
+import { createBatch, createUniversity } from "@/lib/superadmin/catalog";
 import { organisationSchema } from "@/lib/superadmin/organisation-validation";
 import { createOrganisation } from "@/lib/superadmin/organisations";
 import { projectSchema } from "@/lib/superadmin/project-validation";
@@ -150,5 +152,75 @@ export async function createProjectAction(
   }
 
   revalidatePath("/superadmin/resources");
+  return { created: true };
+}
+
+export async function createUniversityAction(
+  _state: OrganisationFormState | undefined,
+  formData: FormData,
+): Promise<OrganisationFormState> {
+  const actor = await requireSuperAdmin();
+  const startedAt = Date.now();
+  const parsed = universitySchema.safeParse({
+    name: text(formData, "name"),
+    location: text(formData, "location"),
+  });
+
+  if (!parsed.success) {
+    return { fieldErrors: toFieldErrors(parsed.error) };
+  }
+
+  const result = await createUniversity(actor.id, parsed.data);
+  await recordObservedRequest({
+    path: "/superadmin/universities",
+    method: "POST",
+    startedAt,
+    statusCode: result.ok ? 200 : 400,
+    user: actor,
+    operation: result.ok ? "Created a university" : "University create failed",
+    area: "OTHER",
+  });
+
+  if (!result.ok) {
+    return { formError: result.message, fieldErrors: result.fieldErrors };
+  }
+
+  revalidatePath("/superadmin/universities");
+  revalidatePath("/register/student");
+  return { created: true };
+}
+
+export async function createBatchAction(
+  _state: OrganisationFormState | undefined,
+  formData: FormData,
+): Promise<OrganisationFormState> {
+  const actor = await requireSuperAdmin();
+  const startedAt = Date.now();
+  const parsed = batchSchema.safeParse({
+    year: text(formData, "year"),
+    totalStudents: text(formData, "totalStudents"),
+  });
+
+  if (!parsed.success) {
+    return { fieldErrors: toFieldErrors(parsed.error) };
+  }
+
+  const result = await createBatch(actor.id, parsed.data);
+  await recordObservedRequest({
+    path: "/superadmin/batches",
+    method: "POST",
+    startedAt,
+    statusCode: result.ok ? 200 : 400,
+    user: actor,
+    operation: result.ok ? "Created a batch" : "Batch create failed",
+    area: "OTHER",
+  });
+
+  if (!result.ok) {
+    return { formError: result.message, fieldErrors: result.fieldErrors };
+  }
+
+  revalidatePath("/superadmin/batches");
+  revalidatePath("/register/student");
   return { created: true };
 }

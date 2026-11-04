@@ -35,6 +35,22 @@ export async function seedE2E() {
     lastName: E2E_USERS.admin.lastName,
     passwordHash,
   });
+  await db.university.create({
+    data: {
+      id: E2E_IDS.university,
+      name: "E2E University",
+      location: "Hyderabad",
+      createdById: E2E_IDS.admin,
+    },
+  });
+  await db.batch.create({
+    data: {
+      id: E2E_IDS.batch,
+      year: "2026",
+      totalStudents: 120,
+      createdById: E2E_IDS.admin,
+    },
+  });
   await insertUser({
     id: E2E_IDS.student,
     profileId: E2E_IDS.studentProfile,

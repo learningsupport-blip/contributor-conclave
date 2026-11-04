@@ -145,6 +145,8 @@ model User {
   sessions        Session[]
   organisations   Organisation[]
   projects        Project[]
+  universities    University[]
+  batches         Batch[]
 
   @@index([role])
   @@index([deactivatedAt])
@@ -172,16 +174,23 @@ model StudentProfile {
   niatId         String   @unique @map("niat_id") @db.Citext
   batch          String
   universityName String   @map("university_name")
+  mobileNumber   String?  @map("mobile_number")
+  universityId   String?  @map("university_id") @db.Uuid
+  batchId        String?  @map("batch_id") @db.Uuid
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  universityRef University?           @relation(fields: [universityId], references: [id], onDelete: Restrict)
+  batchRef      Batch?                @relation(fields: [batchId], references: [id], onDelete: Restrict)
   submissions   PRSubmission[]
   assignments   MentorAssignment[]
   techInterests StudentTechInterest[]
   projectWork   StudentProjectWork[]
 
   @@index([batch])
+  @@index([universityId])
+  @@index([batchId])
   @@map("student_profiles")
 }
 
@@ -486,4 +495,36 @@ model StudentProjectWork {
   @@unique([studentId, projectId])
   @@index([projectId])
   @@map("student_project_work")
+}
+
+/// A university a super admin offers on student registration.
+model University {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.Citext
+  location    String
+  createdById String   @map("created_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  createdBy User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  students  StudentProfile[]
+
+  @@index([createdById])
+  @@map("universities")
+}
+
+/// A student batch identified by its year.
+model Batch {
+  id            String   @id @default(uuid()) @db.Uuid
+  year          String   @unique
+  totalStudents Int      @map("total_students")
+  createdById   String   @map("created_by_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  createdBy User             @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  students  StudentProfile[]
+
+  @@index([createdById])
+  @@map("batches")
 }

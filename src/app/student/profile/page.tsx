@@ -43,6 +43,7 @@ export default async function StudentProfilePage() {
               "None saved"
             ),
           },
+          { label: "Mobile number", value: student.mobileNumber ?? "None saved" },
         ]}
       />
     </StudentSection>

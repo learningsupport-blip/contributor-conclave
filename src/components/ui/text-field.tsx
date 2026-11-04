@@ -6,6 +6,7 @@ export function TextField({
   name,
   type = "text",
   autoComplete,
+  inputMode,
   required = false,
   defaultValue,
   errors,
@@ -15,6 +16,7 @@ export function TextField({
   name: string;
   type?: string;
   autoComplete?: string;
+  inputMode?: "numeric" | "tel" | "email" | "text";
   required?: boolean;
   defaultValue?: string;
   errors?: string[];
@@ -32,6 +34,7 @@ export function TextField({
         name={name}
         type={type}
         autoComplete={autoComplete}
+        inputMode={inputMode}
         required={required}
         defaultValue={defaultValue}
         aria-invalid={messages.length > 0 ? true : undefined}

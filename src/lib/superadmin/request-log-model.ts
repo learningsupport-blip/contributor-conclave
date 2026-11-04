@@ -58,6 +58,8 @@ export const ROLE_LABELS: Record<LogRole, string> = {
 };
 
 const ROUTES: { prefix: string; area: LogArea; operation: string }[] = [
+  { prefix: "/superadmin/universities", area: "OTHER", operation: "Viewed university management" },
+  { prefix: "/superadmin/batches", area: "OTHER", operation: "Viewed batch management" },
   { prefix: "/superadmin/resources", area: "OTHER", operation: "Viewed resource management" },
   { prefix: "/superadmin/logs", area: "ACCESS", operation: "Viewed application logs" },
   { prefix: "/superadmin/users", area: "ACCESS", operation: "Viewed users" },

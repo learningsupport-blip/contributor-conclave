@@ -16,6 +16,7 @@ import {
 import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth/cookie";
 import { resetAuthThrottle } from "@/lib/auth/throttle";
 import { ForbiddenError, UnauthorizedError } from "@/lib/auth/errors";
+import { insertUser } from "@/test/fixtures";
 
 const cookieStore = vi.hoisted(() => {
   return new Map<string, { value: string; options?: Record<string, unknown> }>();
@@ -37,6 +38,10 @@ vi.mock("next/headers", () => ({
 }));
 
 const password = "Sup3r-secret!";
+let universityId = "";
+let batchId = "";
+let universityName = "";
+let batchYear = "";
 
 function uniqueId() {
   return randomUUID().slice(0, 8);
@@ -49,9 +54,10 @@ function studentPayload(id = uniqueId()) {
     lastName: "Lovelace",
     email: `student-${id}@auth-test.example`,
     niatId: `niat-${id}`,
-    batch: "Batch 1",
-    universityName: "Example University",
+    universityId,
+    batchId,
     githubUsername: `student-${id}`,
+    mobileNumber: "9876543210",
     password,
     confirmPassword: password,
   };
@@ -80,12 +86,45 @@ function post(url: string, body: unknown) {
   });
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   cookieStore.clear();
   resetAuthThrottle();
+  const owner = await insertUser({
+    role: "SUPERADMIN",
+    email: `catalog-${uniqueId()}@auth-test.example`,
+    firstName: "Catalog",
+    lastName: "Owner",
+  });
+  universityName = `University ${uniqueId()}`;
+  batchYear = `y${uniqueId()}`;
+  const university = await db.university.create({
+    data: { name: universityName, location: "Hyderabad", createdById: owner.id },
+  });
+  const batch = await db.batch.create({
+    data: { year: batchYear, totalStudents: 40, createdById: owner.id },
+  });
+  universityId = university.id;
+  batchId = batch.id;
 });
 
 afterEach(async () => {
+  const users = await db.user.findMany({
+    where: { email: { endsWith: "@auth-test.example" } },
+    select: { id: true },
+  });
+  const userIds = users.map((user) => user.id);
+  if (userIds.length > 0) {
+    await db.studentProfile.updateMany({
+      where: { universityRef: { createdById: { in: userIds } } },
+      data: { universityId: null },
+    });
+    await db.studentProfile.updateMany({
+      where: { batchRef: { createdById: { in: userIds } } },
+      data: { batchId: null },
+    });
+    await db.university.deleteMany({ where: { createdById: { in: userIds } } });
+    await db.batch.deleteMany({ where: { createdById: { in: userIds } } });
+  }
   await db.user.deleteMany({
     where: { email: { endsWith: "@auth-test.example" } },
   });
@@ -108,6 +147,13 @@ describe("registration", () => {
     });
     expect(saved.passwordHash).not.toBe(password);
     expect(saved.passwordHash.startsWith("$argon2id$")).toBe(true);
+
+    const profile = await db.studentProfile.findUniqueOrThrow({ where: { userId: saved.id } });
+    expect(profile.mobileNumber).toBe("+919876543210");
+    expect(profile.universityName).toBe(universityName);
+    expect(profile.batch).toBe(batchYear);
+    expect(profile.universityId).toBe(universityId);
+    expect(profile.batchId).toBe(batchId);
 
     const cookie = cookieStore.get(SESSION_COOKIE);
     expect(cookie?.options).toMatchObject({

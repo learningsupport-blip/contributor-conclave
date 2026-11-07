@@ -4,6 +4,7 @@ import { TextLink } from "@/components/student/text-link";
 import { ButtonLink } from "@/components/ui/button-link";
 import { ErrorState } from "@/components/ui/error-state";
 import { requireStudent } from "@/lib/auth/authorization";
+import { isCodeHost } from "@/lib/superadmin/gsoc-catalog";
 import { getStudentOrganisation } from "@/lib/student/opportunities";
 
 export const metadata = { title: "Organisation" };
@@ -36,12 +37,14 @@ export default async function StudentOrganisationPage({ params }: { params: Prom
             <TextLink href={detail.websiteUrl}>{detail.websiteUrl}</TextLink>
           </dd>
         </div>
-        <div>
-          <dt className="font-medium">Github/Gitlab URL</dt>
-          <dd className="mt-1">
-            <TextLink href={detail.repositoryUrl}>{detail.repositoryUrl}</TextLink>
-          </dd>
-        </div>
+        {isCodeHost(detail.repositoryUrl) ? (
+          <div>
+            <dt className="font-medium">Github/Gitlab URL</dt>
+            <dd className="mt-1">
+              <TextLink href={detail.repositoryUrl}>{detail.repositoryUrl}</TextLink>
+            </dd>
+          </div>
+        ) : null}
         <div className="sm:col-span-2">
           <dt className="font-medium">Technological Stack</dt>
           <dd className="mt-1">{detail.technologies.join(", ")}</dd>

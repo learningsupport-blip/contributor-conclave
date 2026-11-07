@@ -86,8 +86,6 @@ async function person(role: "STUDENT" | "MENTOR" | "ADMIN", suffix: string, labe
             mentorProfile: {
               create: {
                 employeeId: `emp-${label}-${suffix}`,
-                batch: "Batch 24",
-                universityName: "Example University",
                 approvalStatus: "APPROVED",
               },
             },

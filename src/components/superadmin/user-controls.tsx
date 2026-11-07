@@ -2,9 +2,12 @@
 
 import { useActionState } from "react";
 
-import { changeRoleAction, setAccessAction, type SuperAdminFormState } from "@/app/actions/superadmin";
+import {
+  assignApplicationRoleAction,
+  setAccessAction,
+  type SuperAdminFormState,
+} from "@/app/actions/superadmin";
 import { SubmitButton } from "@/components/auth/submit-button";
-import type { AssignableRole } from "@/lib/superadmin/users";
 
 function FormError({ state }: { state: SuperAdminFormState | undefined }) {
   if (!state?.formError) {
@@ -21,30 +24,31 @@ function FormError({ state }: { state: SuperAdminFormState | undefined }) {
 export function UserRoleForm({
   userId,
   personName,
-  role,
+  roleId: currentRoleId,
   roleOptions,
 }: {
   userId: string;
   personName: string;
-  role: AssignableRole;
-  roleOptions: { value: AssignableRole; label: string }[];
+  roleId: string | null;
+  roleOptions: { value: string; label: string }[];
 }) {
-  const [roleState, roleAction, rolePending] = useActionState(changeRoleAction, undefined);
-  const roleId = `role-${userId}`;
+  const [roleState, roleAction, rolePending] = useActionState(assignApplicationRoleAction, undefined);
+  const roleFieldId = `role-${userId}`;
 
   return (
     <div className="flex min-w-56 flex-col gap-2">
       <form action={roleAction} className="flex flex-wrap items-center gap-2">
         <input type="hidden" name="userId" value={userId} />
-        <label htmlFor={roleId} className="sr-only">
+        <label htmlFor={roleFieldId} className="sr-only">
           Role for {personName}
         </label>
         <select
-          id={roleId}
-          name="role"
-          defaultValue={role}
+          id={roleFieldId}
+          name="roleId"
+          defaultValue={currentRoleId ?? ""}
           className="rounded-md border border-ink/15 bg-white px-3 py-2 text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-moss-700 dark:border-paper/20 dark:bg-ink dark:text-paper dark:focus-visible:outline-moss-300"
         >
+          <option value="">{roleOptions.length > 0 ? "Choose a role" : "Create a role first"}</option>
           {roleOptions.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -64,12 +68,14 @@ export function UserAccessForm({
   userId,
   personName,
   active,
+  action = setAccessAction,
 }: {
   userId: string;
   personName: string;
   active: boolean;
+  action?: (state: SuperAdminFormState | undefined, formData: FormData) => Promise<SuperAdminFormState>;
 }) {
-  const [accessState, accessAction, accessPending] = useActionState(setAccessAction, undefined);
+  const [accessState, accessAction, accessPending] = useActionState(action, undefined);
   const actionLabel = active ? "Deactivate" : "Restore";
 
   return (

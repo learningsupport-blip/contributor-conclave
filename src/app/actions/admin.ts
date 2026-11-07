@@ -76,8 +76,6 @@ export async function updateMentorAction(
   const parsed = mentorUpdateSchema.safeParse({
     firstName: text(formData, "firstName"),
     lastName: text(formData, "lastName"),
-    batch: text(formData, "batch"),
-    universityName: text(formData, "universityName"),
     techStackIds: formData.getAll("techStackId").filter((value): value is string => typeof value === "string"),
   });
 

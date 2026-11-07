@@ -103,8 +103,6 @@ export const mentorRegistrationSchema = z
     lastName: nameSchema,
     email: emailSchema,
     employeeId: identifierSchema("employee ID"),
-    batch: batchSchema,
-    universityName: universitySchema,
     githubUsername: githubUsernameSchema,
     password: passwordSchema,
     confirmPassword: z.string(),

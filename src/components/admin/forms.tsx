@@ -63,16 +63,12 @@ export function MentorProfileForm({
   userId,
   firstName,
   lastName,
-  batch,
-  universityName,
   techStacks,
   techStackIds,
 }: {
   userId: string;
   firstName: string;
   lastName: string;
-  batch: string;
-  universityName: string;
   techStacks: { id: string; name: string }[];
   techStackIds: string[];
 }) {
@@ -84,8 +80,6 @@ export function MentorProfileForm({
       <input type="hidden" name="userId" value={userId} />
       <TextField id="mentor-first-name" name="firstName" label="First name" required defaultValue={firstName} errors={state?.fieldErrors?.firstName} />
       <TextField id="mentor-last-name" name="lastName" label="Last name" required defaultValue={lastName} errors={state?.fieldErrors?.lastName} />
-      <TextField id="mentor-batch" name="batch" label="Batch" required defaultValue={batch} errors={state?.fieldErrors?.batch} />
-      <TextField id="mentor-university" name="universityName" label="University" required defaultValue={universityName} errors={state?.fieldErrors?.universityName} />
       <fieldset
         className="flex flex-col gap-2"
         aria-describedby={state?.fieldErrors?.techStackIds ? "mentor-tech-stacks-error" : undefined}

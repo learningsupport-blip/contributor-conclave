@@ -1,3 +1,4 @@
+import { githubAccountFromRepositoryUrl, selectActiveProjects, type ActiveGitHubProject } from "@/lib/github/active-projects";
 import { createGitHubClient, type GitHubFetcher } from "@/lib/github/client";
 import { readGitHubToken } from "@/lib/github/env";
 import { e2eGitHubOptions } from "@/lib/github/fixture";
@@ -188,6 +189,34 @@ export function createGitHubService(options: GitHubServiceOptions = {}) {
 
   function listRepositories(username: string): Promise<GitHubResult<GitHubRepository[]>> {
     return getRepositories(username);
+  }
+
+  async function listActiveOrganisationProjects(repositoryUrl: string): Promise<GitHubResult<ActiveGitHubProject[]>> {
+    const login = githubAccountFromRepositoryUrl(repositoryUrl);
+    if (!login) {
+      return githubFailure("invalid_url", "Active projects can be loaded from a GitHub organisation.");
+    }
+
+    const blocked = requireToken();
+    if (blocked) {
+      return blocked;
+    }
+
+    const query = "sort=pushed&direction=desc&per_page=100&type=sources";
+    let response = await client.request(`/orgs/${encodeURIComponent(login)}/repos?${query}`);
+    if (!response.ok && response.code === "not_found") {
+      response = await client.request(
+        `/users/${encodeURIComponent(login)}/repos?sort=pushed&direction=desc&per_page=100&type=owner`,
+      );
+    }
+    if (!response.ok) {
+      if (response.code === "not_found") {
+        return githubFailure("not_found", "GitHub could not find that organisation.");
+      }
+      return response;
+    }
+
+    return selectActiveProjects(response.data);
   }
 
   async function listRepositoryCatalog(username: string): Promise<GitHubResult<GitHubRepository[]>> {
@@ -479,6 +508,7 @@ export function createGitHubService(options: GitHubServiceOptions = {}) {
     validatePullRequestUrl,
     getProfile,
     listRepositories,
+    listActiveOrganisationProjects,
     listRepositoryCatalog,
     getRecentPullRequests,
     listPullRequests,

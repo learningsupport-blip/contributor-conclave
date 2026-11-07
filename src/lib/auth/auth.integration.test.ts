@@ -70,8 +70,6 @@ function mentorPayload(id = uniqueId()) {
     lastName: "Hopper",
     email: `mentor-${id}@auth-test.example`,
     employeeId: `emp-${id}`,
-    batch: "Batch 1",
-    universityName: "Example University",
     githubUsername: `mentor-${id}`,
     password,
     confirmPassword: password,
@@ -168,14 +166,37 @@ describe("registration", () => {
     expect(session.tokenHash).not.toBe(cookie?.value);
   });
 
-  it("creates a mentor account", async () => {
+  it("creates a mentor account that stays signed out until approved", async () => {
     const payload = mentorPayload();
     const response = await register(post("http://localhost/api/auth/register", payload));
     const body = await response.json();
 
     expect(response.status).toBe(201);
-    expect(body.user.role).toBe("MENTOR");
-    expect(body.user.role).not.toBe("ADMIN");
+    expect(body.pendingApproval).toBe(true);
+    expect(body.user).toBeUndefined();
+    expect(JSON.stringify(body)).not.toContain(password);
+    expect(cookieStore.has(SESSION_COOKIE)).toBe(false);
+
+    const profile = await db.mentorProfile.findFirstOrThrow({
+      where: { user: { email: payload.email } },
+    });
+    expect(profile.approvalStatus).toBe("PENDING");
+
+    const denied = await login(
+      post("http://localhost/api/auth/login", { email: payload.email, password }),
+    );
+    expect(denied.status).toBe(403);
+    expect(cookieStore.has(SESSION_COOKIE)).toBe(false);
+
+    await db.mentorProfile.update({
+      where: { id: profile.id },
+      data: { approvalStatus: "APPROVED" },
+    });
+    const allowed = await login(
+      post("http://localhost/api/auth/login", { email: payload.email, password }),
+    );
+    expect(allowed.status).toBe(200);
+    expect((await allowed.json()).user.role).toBe("MENTOR");
   });
 
   it("rejects admin registration from the browser", async () => {
@@ -318,7 +339,13 @@ describe("role authorization", () => {
   });
 
   it("allows a mentor only through requireMentor", async () => {
-    await register(post("http://localhost/api/auth/register", mentorPayload()));
+    const payload = mentorPayload();
+    await register(post("http://localhost/api/auth/register", payload));
+    await db.mentorProfile.updateMany({
+      where: { user: { email: payload.email } },
+      data: { approvalStatus: "APPROVED" },
+    });
+    await login(post("http://localhost/api/auth/login", { email: payload.email, password }));
 
     await expect(requireMentor()).resolves.toMatchObject({ role: "MENTOR" });
     await expect(requireStudent()).rejects.toBeInstanceOf(ForbiddenError);

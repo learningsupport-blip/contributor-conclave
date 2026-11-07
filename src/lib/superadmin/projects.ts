@@ -15,7 +15,7 @@ export type ProjectRecord = {
 };
 
 export async function listProjects(actorId: string): Promise<AdminSuccess<ProjectRecord[]> | AdminError> {
-  const actor = await requireSuperAdminActor(actorId);
+  const actor = await requireSuperAdminActor(actorId, "resources");
   if (!actor.ok) {
     return actor;
   }
@@ -52,7 +52,7 @@ export async function createProject(
   actorId: string,
   input: ProjectInput,
 ): Promise<AdminSuccess<ProjectRecord> | AdminError> {
-  const actor = await requireSuperAdminActor(actorId);
+  const actor = await requireSuperAdminActor(actorId, "resources");
   if (!actor.ok) {
     return actor;
   }

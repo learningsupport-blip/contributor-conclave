@@ -1,6 +1,6 @@
 import { LogsDashboard } from "@/components/superadmin/logs-dashboard";
 import { ErrorState } from "@/components/ui/error-state";
-import { requireSuperAdmin } from "@/lib/auth/authorization";
+import { requireScreen } from "@/lib/auth/authorization";
 import { loadApplicationLogs } from "@/lib/superadmin/request-log";
 import { parseLogQuery, serializeLogQuery } from "@/lib/superadmin/request-log-model";
 
@@ -21,7 +21,7 @@ export default async function ApplicationLogsPage({
     page?: string;
   }>;
 }) {
-  const actor = await requireSuperAdmin();
+  const actor = await requireScreen("logs");
   const params = await searchParams;
   const query = parseLogQuery(params);
   const result = await loadApplicationLogs(actor.id, query);

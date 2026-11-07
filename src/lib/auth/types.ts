@@ -6,6 +6,7 @@ export type PublicUser = {
   firstName: string;
   lastName: string;
   email: string;
+  screens?: string[] | null;
 };
 
 export const publicUserSelect = {

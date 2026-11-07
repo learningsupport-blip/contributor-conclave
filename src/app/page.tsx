@@ -1,26 +1,6 @@
-import Link from "next/link";
-
 import { ContributionGrid } from "@/components/shell/contribution-grid";
 import { ButtonLink } from "@/components/ui/button-link";
 import { focusRing } from "@/components/ui/styles";
-
-const pillars = [
-  {
-    href: "/mentorship",
-    title: "Mentorship",
-    text: "Students and mentors meet around real repositories, not isolated assignments.",
-  },
-  {
-    href: "/reviews",
-    title: "Pull request review",
-    text: "A review is a conversation on the diff: what changed, what to try next, and when it is ready.",
-  },
-  {
-    href: "/collaborate",
-    title: "Collaboration",
-    text: "Messages stay next to the pull request so the thread and the code remain one piece of work.",
-  },
-];
 
 export default function Home() {
   return (
@@ -42,22 +22,6 @@ export default function Home() {
           </div>
         </div>
         <ContributionGrid />
-      </section>
-      <section className="border-t border-ink/10 dark:border-paper/10">
-        <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-14 sm:px-6 md:grid-cols-3">
-          {pillars.map((pillar) => (
-            <article key={pillar.href} className="flex flex-col gap-3">
-              <h2 className="text-xl font-semibold">{pillar.title}</h2>
-              <p className="text-ink/75 dark:text-paper/75">{pillar.text}</p>
-              <Link
-                href={pillar.href}
-                className={`w-fit text-sm font-medium text-moss-700 underline underline-offset-4 dark:text-moss-300 ${focusRing}`}
-              >
-                Read about {pillar.title.toLowerCase()}
-              </Link>
-            </article>
-          ))}
-        </div>
       </section>
     </main>
   );

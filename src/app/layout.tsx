@@ -4,13 +4,13 @@ import { RouteFocus } from "@/components/shell/route-focus";
 import { Sidebar } from "@/components/shell/sidebar";
 import { SiteFooter } from "@/components/shell/site-footer";
 import { ThemeSync } from "@/components/shell/theme-sync";
-import { signedInNavItems } from "@/components/shell/workspace-items";
+import { navForSignedInUser, showsWorkspaceSidebar } from "@/components/shell/workspace-items";
 import { buttonCorners, focusRing } from "@/components/ui/styles";
 import { getCurrentUser } from "@/lib/auth/session";
 import { readAuthorProfile } from "@/lib/site/author";
 import { parseTheme, THEME_COOKIE } from "@/lib/theme/theme";
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { Suspense } from "react";
 import { Geist } from "next/font/google";
 import "./globals.css";
@@ -34,6 +34,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
+  const pathname = (await headers()).get("x-cc-path") ?? "";
+  const sidebarItems =
+    user && showsWorkspaceSidebar(user.role, pathname, user.screens) ? navForSignedInUser(user.role, user.screens) : null;
   const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
 
   return (
@@ -56,7 +59,7 @@ export default async function RootLayout({
         <RequestRecorder user={user} />
         <Navbar user={user} theme={theme} />
         <div className="flex min-h-0 flex-1">
-          {user ? <Sidebar label="Account" items={signedInNavItems(user.role)} /> : null}
+          {sidebarItems ? <Sidebar label="Account" items={sidebarItems} /> : null}
           <div id="content" tabIndex={-1} className="flex min-w-0 flex-1 flex-col outline-none">
             {children}
           </div>

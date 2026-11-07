@@ -59,6 +59,9 @@ export const ROLE_LABELS: Record<LogRole, string> = {
 
 const ROUTES: { prefix: string; area: LogArea; operation: string }[] = [
   { prefix: "/superadmin/universities", area: "OTHER", operation: "Viewed university management" },
+  { prefix: "/superadmin/students", area: "STUDENT", operation: "Viewed student management" },
+  { prefix: "/superadmin/mentors", area: "MENTOR", operation: "Viewed mentor management" },
+  { prefix: "/superadmin/raised-prs", area: "MENTOR", operation: "Viewed mentor raised pull requests" },
   { prefix: "/superadmin/batches", area: "OTHER", operation: "Viewed batch management" },
   { prefix: "/superadmin/resources", area: "OTHER", operation: "Viewed resource management" },
   { prefix: "/superadmin/logs", area: "ACCESS", operation: "Viewed application logs" },
@@ -83,6 +86,8 @@ const ROUTES: { prefix: string; area: LogArea; operation: string }[] = [
   { prefix: "/student/chat", area: "CHAT", operation: "Viewed chat" },
   { prefix: "/student/profile", area: "PROFILE", operation: "Viewed profile" },
   { prefix: "/student", area: "STUDENT", operation: "Viewed student overview" },
+  { prefix: "/mentor/organisations", area: "MENTOR", operation: "Viewed assigned organisations" },
+  { prefix: "/mentor/raised-prs", area: "MENTOR", operation: "Viewed raised pull requests" },
   { prefix: "/mentor/students", area: "MENTOR", operation: "Viewed assigned students" },
   { prefix: "/mentor/pull-requests", area: "MENTOR", operation: "Viewed assigned pull requests" },
   { prefix: "/mentor/reviews", area: "REVIEWS", operation: "Viewed pending reviews" },
@@ -91,9 +96,6 @@ const ROUTES: { prefix: string; area: LogArea; operation: string }[] = [
   { prefix: "/mentor/chat", area: "CHAT", operation: "Viewed chat" },
   { prefix: "/mentor/profile", area: "PROFILE", operation: "Viewed profile" },
   { prefix: "/mentor", area: "MENTOR", operation: "Viewed mentor overview" },
-  { prefix: "/mentorship", area: "MENTORSHIP", operation: "Viewed mentorship" },
-  { prefix: "/reviews", area: "REVIEWS", operation: "Viewed reviews" },
-  { prefix: "/collaborate", area: "COLLABORATE", operation: "Viewed collaborate" },
   { prefix: "/login", area: "AUTH", operation: "Viewed sign in" },
   { prefix: "/signup", area: "AUTH", operation: "Viewed sign up" },
 ];

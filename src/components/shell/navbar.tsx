@@ -1,8 +1,6 @@
 import Link from "next/link";
 
 import { logoutAction } from "@/app/actions/auth";
-import { Disclosure } from "@/components/shell/disclosure";
-import { PrimaryLinks } from "@/components/shell/primary-links";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { ButtonLink } from "@/components/ui/button-link";
 import { buttonCorners, focusRing } from "@/components/ui/styles";
@@ -35,25 +33,6 @@ export function Navbar({ user, theme }: { user: PublicUser | null; theme: Theme 
             </form>
           ) : (
             <div className="flex items-center gap-2">
-              <Disclosure
-                className="relative md:hidden"
-                summaryClassName={`cursor-pointer border border-ink/15 px-3 py-2 text-sm whitespace-nowrap dark:border-paper/20 ${buttonCorners} ${focusRing}`}
-                summary="Menu"
-              >
-                <nav
-                  aria-label="Menu"
-                  className="absolute right-0 z-20 mt-2 w-48 rounded-xl border border-ink/15 bg-paper p-3 dark:border-paper/15 dark:bg-ink"
-                >
-                  <ul className="flex flex-col gap-2">
-                    <PrimaryLinks className="text-ink dark:text-paper" />
-                  </ul>
-                </nav>
-              </Disclosure>
-              <nav aria-label="Primary" className="hidden md:block">
-                <ul className="flex items-center gap-1">
-                  <PrimaryLinks className="text-ink/80 dark:text-paper/80" />
-                </ul>
-              </nav>
               <ButtonLink href="/login" variant="secondary">
                 Log in
               </ButtonLink>

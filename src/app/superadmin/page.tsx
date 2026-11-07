@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { PageHeader } from "@/components/ui/page-header";
 import { focusRing } from "@/components/ui/styles";
-import { requireSuperAdmin } from "@/lib/auth/authorization";
+import { requireScreen } from "@/lib/auth/authorization";
 
 export const metadata = { title: "Overview" };
 
@@ -25,7 +25,7 @@ const areas = [
 ];
 
 export default async function SuperAdminPage() {
-  const actor = await requireSuperAdmin();
+  const actor = await requireScreen("overview");
 
   return (
     <main className="flex flex-col gap-6">

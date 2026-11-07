@@ -54,8 +54,6 @@ export default async function AdminMentorPage({
           userId={mentor.id}
           firstName={mentor.firstName}
           lastName={mentor.lastName}
-          batch={mentor.batch}
-          universityName={mentor.universityName}
           techStacks={mentor.techStacks}
           techStackIds={mentor.techStackIds}
         />

@@ -33,8 +33,6 @@ export default async function MentorProfilePage() {
           { label: "Name", value: `${profile.firstName} ${profile.lastName}` },
           { label: "Email", value: profile.email },
           { label: "Employee ID", value: profile.employeeId },
-          { label: "University", value: profile.universityName },
-          { label: "Batch", value: profile.batch },
           {
             label: "Approval",
             value: <StatusBadge tone={approval.tone}>{approval.label}</StatusBadge>,

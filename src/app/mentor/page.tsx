@@ -43,6 +43,31 @@ export default async function MentorPage() {
           </li>
         ))}
       </ul>
+      <section className="flex flex-col gap-3" aria-labelledby="organisations-heading">
+        <h2 id="organisations-heading" className="text-lg font-semibold">
+          Assigned organisations
+        </h2>
+        {result.data.organisations.length === 0 ? (
+          <p className="text-ink/75 dark:text-paper/75">No organisation has been assigned to you yet.</p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {result.data.organisations.map((organisation) => (
+              <li key={organisation.id}>
+                <Link
+                  href="/mentor/organisations"
+                  className={`block rounded-2xl border border-ink/10 px-4 py-3 dark:border-paper/10 ${focusRing}`}
+                >
+                  <span className="font-medium">{organisation.name}</span>
+                  <span className="mt-1 block text-sm text-ink/70 dark:text-paper/70">
+                    {organisation.program}
+                    {organisation.technologies.length > 0 ? ` · ${organisation.technologies.join(", ")}` : ""}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
       <section className="flex flex-col gap-3" aria-labelledby="pending-heading">
         <h2 id="pending-heading" className="text-lg font-semibold">
           Pending reviews

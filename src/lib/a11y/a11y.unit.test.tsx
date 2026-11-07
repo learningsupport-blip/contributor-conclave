@@ -8,7 +8,7 @@ import axe from "axe-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Disclosure } from "@/components/shell/disclosure";
-import { CreateOrganisationCard } from "@/components/superadmin/create-organisation-card";
+import { GsocOrganisationList } from "@/components/superadmin/gsoc-organisation-list";
 import { CreateProjectCard } from "@/components/superadmin/create-project-card";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { SiteFooter } from "@/components/shell/site-footer";
@@ -25,7 +25,7 @@ import { TextareaField } from "@/components/ui/textarea-field";
 import { TextField } from "@/components/ui/text-field";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/mentorship",
+  usePathname: () => "/login",
   useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -135,16 +135,64 @@ describe("accessible components", () => {
     await expectNoViolations(container);
   });
 
-  it("opens a form from the create organisation card", async () => {
-    const container = await render(<CreateOrganisationCard />);
-    const opener = container.querySelector("button");
-    expect(opener?.textContent).toContain("Create a Organisation");
+  it("lists GSoC organisations with an approve action", async () => {
+    const container = await render(
+      <GsocOrganisationList
+        year={2026}
+        page={1}
+        total={2}
+        pageSize={12}
+        query=""
+        organisations={[
+          {
+            name: "React Org",
+            description: "Interface tools",
+            category: "Web",
+            imageUrl: "",
+            imageBackground: "",
+            technologies: ["React"],
+            sourceTechnologies: ["react", "javascript", "html", "css", "typescript"],
+            topics: ["ui"],
+            years: [2026, 2024],
+            websiteUrl: "https://react.example",
+            codeRepositoryUrl: "https://github.com/react-org",
+            projectsUrl: "",
+            ideasUrl: "",
+            guideUrl: "",
+            projectCount: 2,
+            approved: false,
+          },
+          {
+            name: "Python Org",
+            description: "Scientific tools",
+            category: "Science",
+            imageUrl: "",
+            imageBackground: "",
+            technologies: [],
+            sourceTechnologies: ["python"],
+            topics: [],
+            years: [2026],
+            websiteUrl: "https://python.example",
+            codeRepositoryUrl: "",
+            projectsUrl: "",
+            ideasUrl: "",
+            guideUrl: "",
+            projectCount: 0,
+            approved: true,
+          },
+        ]}
+      />,
+    );
+    expect(container.querySelector("h2")?.textContent).toContain("2026");
+    expect(container.textContent).toContain("View details");
+    expect(container.textContent).toContain("Approve");
+    expect(container.textContent).toContain("Disapprove");
+    const details = [...container.querySelectorAll("button")].find((button) => button.textContent === "View details");
     await act(async () => {
-      opener?.click();
+      details?.click();
     });
-    const dialog = container.querySelector("dialog");
-    expect(dialog?.open).toBe(true);
-    expect(dialog?.querySelector("form")?.getAttribute("aria-label")).toBe("Create a Organisation");
+    expect(container.querySelector("dialog")?.open).toBe(true);
+    expect(container.querySelector("dialog")?.textContent).toContain("Interface tools");
     await expectNoViolations(container);
   });
 
@@ -172,7 +220,7 @@ describe("accessible components", () => {
           emptyTitle="No reviews yet"
           emptyDescription="Submitted pull requests will appear here."
         />
-        <Pager page={1} total={40} pageSize={20} href={(page) => `/reviews?page=${page}`} />
+        <Pager page={1} total={40} pageSize={20} href={(page) => `/login?page=${page}`} />
         <Dialog label="What a review includes" title="What a review includes">
           <p>A mentor records a decision and a comment.</p>
         </Dialog>
@@ -241,7 +289,7 @@ describe("accessible components", () => {
   it("closes a disclosure from the keyboard and returns focus to its summary", async () => {
     const container = await render(
       <Disclosure summary="Menu" summaryClassName="rounded-md">
-        <a href="/mentorship">Mentorship</a>
+        <a href="/login">Log in</a>
       </Disclosure>,
     );
     const details = container.querySelector("details");

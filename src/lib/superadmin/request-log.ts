@@ -110,7 +110,7 @@ export async function loadApplicationLogs(
   query: LogQuery,
   now = new Date(),
 ): Promise<AdminSuccess<LogsDashboard> | AdminError> {
-  const actor = await requireSuperAdminActor(actorId);
+  const actor = await requireSuperAdminActor(actorId, "logs");
   if (!actor.ok) {
     return actor;
   }

@@ -1,12 +1,20 @@
+import { redirect } from "next/navigation";
+
 import { WorkspaceShell } from "@/components/shell/workspace-shell";
-import { enforcePageRole } from "@/lib/auth/authorization";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export default async function SuperAdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await enforcePageRole("SUPERADMIN");
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
+  }
+  if (user.role !== "SUPERADMIN" && !(user.screens && user.screens.length > 0)) {
+    redirect("/forbidden");
+  }
 
   return <WorkspaceShell>{children}</WorkspaceShell>;
 }

@@ -79,6 +79,24 @@ export async function removeFixtures(domain: string, stackPrefix: string) {
         OR: [{ createdById: { in: userIds } }, { organisation: { createdById: { in: userIds } } }],
       },
     });
+    await db.mentorRaisedPullRequest.deleteMany({
+      where: {
+        OR: [
+          ...(mentorIds.length > 0 ? [{ mentorId: { in: mentorIds } }] : []),
+          { organisation: { createdById: { in: userIds } } },
+          { scoredById: { in: userIds } },
+        ],
+      },
+    });
+    await db.mentorOrganisation.deleteMany({
+      where: {
+        OR: [
+          ...(mentorIds.length > 0 ? [{ mentorId: { in: mentorIds } }] : []),
+          { organisation: { createdById: { in: userIds } } },
+          { assignedById: { in: userIds } },
+        ],
+      },
+    });
     await db.organisation.deleteMany({ where: { createdById: { in: userIds } } });
     await db.studentProfile.updateMany({
       where: { universityRef: { createdById: { in: userIds } } },
@@ -99,6 +117,8 @@ export async function removeFixtures(domain: string, stackPrefix: string) {
       },
     });
     await db.university.deleteMany({ where: { createdById: { in: userIds } } });
+    await db.user.updateMany({ where: { id: { in: userIds } }, data: { applicationRoleId: null } });
+    await db.applicationRole.deleteMany({ where: { createdById: { in: userIds } } });
     await db.applicationRequestLog.deleteMany({
       where: {
         OR: [{ userId: { in: userIds } }, { actorEmail: { endsWith: domain } }],
@@ -144,8 +164,6 @@ export async function insertUser(input: FixtureUserInput) {
               create: {
                 id: input.profileId,
                 employeeId: input.employeeId ?? input.email,
-                batch: input.batch ?? "Fixture",
-                universityName: input.universityName ?? "Fixture University",
                 approvalStatus: input.approvalStatus ?? "PENDING",
               },
             }

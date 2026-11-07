@@ -194,8 +194,6 @@ export async function registerMentor(
         data: {
           userId: created.id,
           employeeId: input.employeeId,
-          batch: input.batch,
-          universityName: input.universityName,
         },
       });
 
@@ -244,6 +242,21 @@ export async function authenticate(
       status: 403,
       formError: "This account is deactivated.",
     };
+  }
+
+  if (user.role === "MENTOR") {
+    const profile = await db.mentorProfile.findUnique({
+      where: { userId: user.id },
+      select: { approvalStatus: true },
+    });
+
+    if (profile?.approvalStatus !== "APPROVED") {
+      return {
+        ok: false,
+        status: 403,
+        formError: "This mentor account is waiting for approval.",
+      };
+    }
   }
 
   return {

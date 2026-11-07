@@ -9,7 +9,9 @@ export const profileUpdateSchema = z.object({
   universityName: universitySchema,
 });
 
-export const mentorUpdateSchema = profileUpdateSchema.extend({
+export const mentorUpdateSchema = z.object({
+  firstName: nameSchema,
+  lastName: nameSchema,
   techStackIds: z
     .array(z.uuid({ error: "Choose a tech stack." }))
     .max(20, { error: "Choose 20 tech stacks or fewer." }),

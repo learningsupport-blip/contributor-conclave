@@ -69,5 +69,15 @@ export async function POST(request: Request) {
   }
 
   const result = await registerMentor(parsed.data);
-  return result.ok ? establishSession(result, 201) : authFailureResponse(result);
+  if (!result.ok) {
+    return authFailureResponse(result);
+  }
+
+  return Response.json(
+    {
+      pendingApproval: true,
+      message: "Your account was created. A super admin must approve it before you can log in.",
+    },
+    { status: 201 },
+  );
 }

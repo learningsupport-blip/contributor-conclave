@@ -145,10 +145,16 @@ model User {
   sessions        Session[]
   organisations   Organisation[]
   projects        Project[]
+  raisedPullRequestsScored MentorRaisedPullRequest[] @relation("RaisedPullRequestScoredBy")
+  mentorOrganisationGrants MentorOrganisation[] @relation("MentorOrganisationAssignedBy")
   universities    University[]
   batches         Batch[]
+  applicationRoleId String?          @map("application_role_id") @db.Uuid
+  applicationRole   ApplicationRole? @relation(fields: [applicationRoleId], references: [id], onDelete: SetNull)
+  applicationRolesCreated ApplicationRole[] @relation("ApplicationRoleCreatedBy")
 
   @@index([role])
+  @@index([applicationRoleId])
   @@index([deactivatedAt])
   @@index([role, deactivatedAt])
   @@map("users")
@@ -198,18 +204,17 @@ model MentorProfile {
   id             String   @id @default(uuid()) @db.Uuid
   userId         String   @unique @map("user_id") @db.Uuid
   employeeId     String               @unique @map("employee_id") @db.Citext
-  batch          String
-  universityName String               @map("university_name")
   approvalStatus MentorApprovalStatus @default(PENDING) @map("approval_status")
   createdAt      DateTime             @default(now()) @map("created_at")
   updatedAt      DateTime             @updatedAt @map("updated_at")
 
   user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  assignments MentorAssignment[]
-  reviews     PRReview[]
-  techStacks  MentorTechStack[]
+  assignments              MentorAssignment[]
+  reviews                  PRReview[]
+  techStacks               MentorTechStack[]
+  organisationAssignments  MentorOrganisation[]
+  raisedPullRequests       MentorRaisedPullRequest[]
 
-  @@index([batch])
   @@index([approvalStatus])
   @@map("mentor_profiles")
 }
@@ -435,16 +440,78 @@ model Organisation {
   websiteUrl    String   @map("website_url")
   repositoryUrl String   @map("repository_url")
   technologies  String[]
+  approved      Boolean  @default(true)
   createdById   String   @map("created_by_id") @db.Uuid
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   createdBy User @relation(fields: [createdById], references: [id], onDelete: Restrict)
   projects  Project[]
+  mentorAssignments MentorOrganisation[]
+  raisedPullRequests MentorRaisedPullRequest[]
 
   @@index([createdById])
+  @@index([approved])
   @@index([createdAt])
   @@map("organisations")
+}
+
+/// An approved organisation given to one mentor by a super admin.
+model MentorOrganisation {
+  mentorId       String   @map("mentor_id") @db.Uuid
+  organisationId String   @map("organisation_id") @db.Uuid
+  assignedById   String   @map("assigned_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  mentor       MentorProfile @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  organisation Organisation  @relation(fields: [organisationId], references: [id], onDelete: Restrict)
+  assignedBy   User          @relation("MentorOrganisationAssignedBy", fields: [assignedById], references: [id], onDelete: Restrict)
+
+  @@id([mentorId, organisationId])
+  @@index([organisationId])
+  @@index([assignedById])
+  @@map("mentor_organisations")
+}
+
+/// A pull request a mentor raised in an assigned organisation, scored manually by a super admin.
+model MentorRaisedPullRequest {
+  id              String    @id @default(uuid()) @db.Uuid
+  mentorId        String    @map("mentor_id") @db.Uuid
+  organisationId  String    @map("organisation_id") @db.Uuid
+  githubPrUrl     String    @unique @map("github_pr_url")
+  repository      String
+  number          Int
+  title           String
+  body            String    @db.Text
+  state           String
+  merged          Boolean
+  draft           Boolean
+  authorLogin     String    @map("author_login")
+  additions       Int?
+  deletions       Int?
+  changedFiles    Int?      @map("changed_files")
+  commits         Int?
+  githubCreatedAt DateTime  @map("github_created_at")
+  githubUpdatedAt DateTime  @map("github_updated_at")
+  fetchedAt       DateTime  @map("fetched_at")
+  clarityScore    Int?      @map("clarity_score")
+  scopeScore      Int?      @map("scope_score")
+  evidenceScore   Int?      @map("evidence_score")
+  outcomeScore    Int?      @map("outcome_score")
+  scoreNote       String?   @map("score_note") @db.Text
+  scoredById      String?   @map("scored_by_id") @db.Uuid
+  scoredAt        DateTime? @map("scored_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  mentor       MentorProfile @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  organisation Organisation  @relation(fields: [organisationId], references: [id], onDelete: Restrict)
+  scoredBy     User?         @relation("RaisedPullRequestScoredBy", fields: [scoredById], references: [id], onDelete: SetNull)
+
+  @@index([mentorId, createdAt])
+  @@index([organisationId])
+  @@index([scoredById])
+  @@map("mentor_raised_pull_requests")
 }
 
 /// An open-source project recorded by a super admin under an organisation.
@@ -495,6 +562,22 @@ model StudentProjectWork {
   @@unique([studentId, projectId])
   @@index([projectId])
   @@map("student_project_work")
+}
+
+/// A role a super admin creates and assigns to an application user, with the screens that role may open.
+model ApplicationRole {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.Citext
+  screens     String[]
+  createdById String   @map("created_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  createdBy User   @relation("ApplicationRoleCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  users     User[]
+
+  @@index([createdById])
+  @@map("application_roles")
 }
 
 /// A university a super admin offers on student registration.

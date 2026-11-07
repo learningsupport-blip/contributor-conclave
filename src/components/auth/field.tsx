@@ -7,6 +7,10 @@ export function Field(
     name: string;
     type?: string;
     autoComplete?: string;
+    value?: string;
+    onChange?: (value: string) => void;
+    describedBy?: string;
+    invalid?: boolean;
     errors?: string[];
   },
 ) {

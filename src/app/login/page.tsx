@@ -5,12 +5,14 @@ import { LoginForm } from "@/components/auth/login-form";
 import { focusRing } from "@/components/ui/styles";
 import { homeForRole } from "@/lib/auth/authorization";
 import { getCurrentUser } from "@/lib/auth/session";
+import { firstScreenHref } from "@/lib/superadmin/screens";
 
 export default async function LoginPage() {
   const user = await getCurrentUser();
 
   if (user) {
-    redirect(homeForRole(user.role));
+    const granted = user.role === "SUPERADMIN" ? null : firstScreenHref(user.screens ?? []);
+    redirect(granted ?? homeForRole(user.role));
   }
 
   return (

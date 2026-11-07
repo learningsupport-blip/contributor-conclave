@@ -48,7 +48,14 @@ export const getCurrentUser = cache(async (): Promise<PublicUser | null> => {
     select: {
       id: true,
       expiresAt: true,
-      user: { select: { ...publicUserSelect, deactivatedAt: true } },
+      user: {
+        select: {
+          ...publicUserSelect,
+          deactivatedAt: true,
+          mentorProfile: { select: { approvalStatus: true } },
+          applicationRole: { select: { screens: true } },
+        },
+      },
     },
   });
 
@@ -56,7 +63,10 @@ export const getCurrentUser = cache(async (): Promise<PublicUser | null> => {
     return null;
   }
 
-  if (session.expiresAt <= new Date() || session.user.deactivatedAt) {
+  const mentorBlocked =
+    session.user.role === "MENTOR" && session.user.mentorProfile?.approvalStatus !== "APPROVED";
+
+  if (session.expiresAt <= new Date() || session.user.deactivatedAt || mentorBlocked) {
     await db.session.delete({ where: { id: session.id } });
     cookieStore.delete(SESSION_COOKIE);
     return null;
@@ -68,6 +78,7 @@ export const getCurrentUser = cache(async (): Promise<PublicUser | null> => {
     firstName: session.user.firstName,
     lastName: session.user.lastName,
     email: session.user.email,
+    screens: session.user.role === "SUPERADMIN" ? null : (session.user.applicationRole?.screens ?? null),
   };
 });
 

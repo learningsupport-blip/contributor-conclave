@@ -37,8 +37,6 @@ export type MentorListItem = {
   name: string;
   email: string;
   employeeId: string;
-  batch: string;
-  universityName: string;
   approvalStatus: "PENDING" | "APPROVED" | "REJECTED";
   deactivatedAt: Date | null;
 };
@@ -95,8 +93,6 @@ function mentorWhere(
             { lastName: { contains: search, mode: "insensitive" } },
             { email: { contains: search, mode: "insensitive" } },
             { mentorProfile: { is: { employeeId: { contains: search, mode: "insensitive" } } } },
-            { mentorProfile: { is: { batch: { contains: search, mode: "insensitive" } } } },
-            { mentorProfile: { is: { universityName: { contains: search, mode: "insensitive" } } } },
           ],
         }
       : {}),
@@ -364,7 +360,7 @@ export async function listMentors(
       email: true,
       deactivatedAt: true,
       mentorProfile: {
-        select: { id: true, employeeId: true, approvalStatus: true, batch: true, universityName: true },
+        select: { id: true, employeeId: true, approvalStatus: true },
       },
     },
   });
@@ -383,8 +379,6 @@ export async function listMentors(
             name: `${user.firstName} ${user.lastName}`,
             email: user.email,
             employeeId: user.mentorProfile.employeeId,
-            batch: user.mentorProfile.batch,
-            universityName: user.mentorProfile.universityName,
             approvalStatus: user.mentorProfile.approvalStatus,
             deactivatedAt: user.deactivatedAt,
           },
@@ -424,8 +418,6 @@ export async function getMentor(
           id: true,
           employeeId: true,
           approvalStatus: true,
-          batch: true,
-          universityName: true,
           techStacks: { select: { techStackId: true } },
         },
       },
@@ -461,8 +453,6 @@ export async function getMentor(
       lastName: user.lastName,
       email: user.email,
       employeeId: user.mentorProfile.employeeId,
-      batch: user.mentorProfile.batch,
-      universityName: user.mentorProfile.universityName,
       approvalStatus: user.mentorProfile.approvalStatus,
       deactivatedAt: user.deactivatedAt,
       githubUsername: user.githubAccount?.username ?? null,
@@ -509,10 +499,6 @@ export async function updateMentor(
     await tx.user.update({
       where: { id: userId },
       data: { firstName: input.firstName, lastName: input.lastName },
-    });
-    await tx.mentorProfile.update({
-      where: { id: profile.id },
-      data: { batch: input.batch, universityName: input.universityName },
     });
     await tx.mentorTechStack.deleteMany({ where: { mentorId: profile.id } });
     if (techStackIds.length > 0) {

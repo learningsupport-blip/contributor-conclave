@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { logError } from "@/lib/log";
 import { adminInvalid, type AdminError, type AdminSuccess } from "@/lib/admin/access";
 import { requireSuperAdminActor } from "@/lib/superadmin/access";
+import type { ApplicationScreenId } from "@/lib/superadmin/screens";
 
 const ASSIGNABLE_ROLES = ["STUDENT", "MENTOR", "ADMIN"] as const;
 export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
@@ -19,6 +20,8 @@ export type ManagedUser = {
   deactivatedAt: Date | null;
   hasStudentProfile: boolean;
   hasMentorProfile: boolean;
+  applicationRoleId: string | null;
+  applicationRoleName: string | null;
 };
 
 function parseUuid(value: string): string | null {
@@ -30,12 +33,13 @@ export function isAssignableRole(value: string): value is AssignableRole {
 }
 
 export async function listManagedUsers(actorId: string): Promise<AdminSuccess<ManagedUser[]> | AdminError> {
-  const actor = await requireSuperAdminActor(actorId);
+  const actor = await requireSuperAdminActor(actorId, "users");
   if (!actor.ok) {
     return actor;
   }
 
   const users = await db.user.findMany({
+    where: { role: { in: ["ADMIN", "SUPERADMIN"] } },
     orderBy: [{ role: "asc" }, { email: "asc" }],
     take: 200,
     select: {
@@ -45,6 +49,8 @@ export async function listManagedUsers(actorId: string): Promise<AdminSuccess<Ma
       email: true,
       role: true,
       deactivatedAt: true,
+      applicationRoleId: true,
+      applicationRole: { select: { name: true } },
       studentProfile: { select: { id: true } },
       mentorProfile: { select: { id: true } },
     },
@@ -61,6 +67,8 @@ export async function listManagedUsers(actorId: string): Promise<AdminSuccess<Ma
       deactivatedAt: user.deactivatedAt,
       hasStudentProfile: user.studentProfile !== null,
       hasMentorProfile: user.mentorProfile !== null,
+      applicationRoleId: user.applicationRoleId,
+      applicationRoleName: user.applicationRole?.name ?? null,
     })),
   };
 }
@@ -70,7 +78,7 @@ export async function changeUserRole(
   userId: string,
   role: AssignableRole,
 ): Promise<AdminSuccess<{ id: string }> | AdminError> {
-  const actor = await requireSuperAdminActor(actorId);
+  const actor = await requireSuperAdminActor(actorId, "users");
   if (!actor.ok) {
     return actor;
   }
@@ -134,8 +142,9 @@ export async function setManagedAccountActive(
   actorId: string,
   userId: string,
   active: boolean,
+  screen: ApplicationScreenId = "users",
 ): Promise<AdminSuccess<{ id: string }> | AdminError> {
-  const actor = await requireSuperAdminActor(actorId);
+  const actor = await requireSuperAdminActor(actorId, screen);
   if (!actor.ok) {
     return actor;
   }
@@ -150,6 +159,18 @@ export async function setManagedAccountActive(
   });
 
   if (!target || target.role === "SUPERADMIN") {
+    return adminInvalid("That account cannot be changed.");
+  }
+
+  if (screen === "students" && target.role !== "STUDENT") {
+    return adminInvalid("That account cannot be changed.");
+  }
+
+  if (screen === "mentors" && target.role !== "MENTOR") {
+    return adminInvalid("That account cannot be changed.");
+  }
+
+  if (screen === "users" && target.role !== "ADMIN") {
     return adminInvalid("That account cannot be changed.");
   }
 

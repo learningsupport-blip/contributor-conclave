@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { authenticate, registerMentor, registerStudent } from "@/lib/auth/accounts";
-import { homeForRole } from "@/lib/auth/authorization";
+import { homeForRole, landingPath } from "@/lib/auth/authorization";
 import { createSession, destroySession, getCurrentUser } from "@/lib/auth/session";
 import { recordObservedRequest } from "@/lib/superadmin/request-log";
 import {
@@ -16,6 +16,7 @@ import {
 export type AuthFormState = {
   formError?: string;
   fieldErrors?: Record<string, string[]>;
+  notice?: string;
 };
 
 function readForm(formData: FormData) {
@@ -91,7 +92,6 @@ export async function registerMentorAction(
     return { formError: result.formError, fieldErrors: result.fieldErrors };
   }
 
-  await createSession(result.user.id);
   await recordObservedRequest({
     path: "/signup",
     method: "POST",
@@ -101,7 +101,9 @@ export async function registerMentorAction(
     operation: "Registered as a mentor",
     area: "AUTH",
   });
-  redirect(homeForRole(result.user.role));
+  return {
+    notice: "Your account was created. A super admin must approve it before you can log in.",
+  };
 }
 
 export async function loginAction(
@@ -142,7 +144,7 @@ export async function loginAction(
     operation: "Signed in",
     area: "AUTH",
   });
-  redirect(homeForRole(result.user.role));
+  redirect(await landingPath(result.user));
 }
 
 export async function logoutAction() {

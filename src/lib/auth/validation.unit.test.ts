@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { passwordMatchStatus } from "@/lib/auth/password-match";
 import { loginSchema, passwordSchema, studentRegistrationSchema } from "@/lib/auth/validation";
 
 const student = {
@@ -21,6 +22,13 @@ describe("registration and login validation", () => {
     expect(passwordSchema.safeParse("longpassword").success).toBe(false);
     expect(passwordSchema.safeParse("longpassword1").success).toBe(false);
     expect(passwordSchema.safeParse("Test-password-1").success).toBe(true);
+  });
+
+  it("reports whether a confirmation matches the password", () => {
+    expect(passwordMatchStatus("", "")).toBe("idle");
+    expect(passwordMatchStatus("Test-password-1", "")).toBe("idle");
+    expect(passwordMatchStatus("Test-password-1", "Test-password-2")).toBe("mismatch");
+    expect(passwordMatchStatus("Test-password-1", "Test-password-1")).toBe("match");
   });
 
   it("lowercases email and GitHub username and rejects a mismatched confirmation", () => {

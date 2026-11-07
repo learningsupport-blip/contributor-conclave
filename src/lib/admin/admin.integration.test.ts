@@ -86,8 +86,6 @@ async function person(
             mentorProfile: {
               create: {
                 employeeId: `emp-${label}-${suffix}`,
-                batch: "Batch 24",
-                universityName: "Example University",
               },
             },
           }

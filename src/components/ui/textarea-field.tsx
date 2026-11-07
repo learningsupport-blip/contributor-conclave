@@ -8,6 +8,7 @@ export function TextareaField({
   required = false,
   maxLength,
   description,
+  defaultValue,
   errors,
 }: {
   id: string;
@@ -17,6 +18,7 @@ export function TextareaField({
   required?: boolean;
   maxLength?: number;
   description?: string;
+  defaultValue?: string;
   errors?: string[];
 }) {
   const errorId = `${id}-error`;
@@ -37,6 +39,7 @@ export function TextareaField({
         rows={rows}
         required={required}
         maxLength={maxLength}
+        defaultValue={defaultValue}
         aria-invalid={messages.length > 0 ? true : undefined}
         aria-describedby={describedBy || undefined}
         className={controlClass}

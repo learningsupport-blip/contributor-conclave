@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { requireMentor } from "@/lib/auth/authorization";
 import { sendMessage } from "@/lib/mentor/chat";
+import { submitMentorRaisedPullRequest } from "@/lib/mentor/raised-pull-requests";
 import { postReview, startReview } from "@/lib/mentor/reviews";
 
 export type MentorFormState = {
@@ -85,4 +86,22 @@ export async function sendMessageAction(
   refreshMentorViews(result.data.submissionId);
   const path = mentorPath(formData.get("returnTo"), `/mentor/pull-requests/${result.data.submissionId}`);
   redirect(`${path}?sent=1`);
+}
+
+export async function submitRaisedPullRequestAction(
+  _state: MentorFormState | undefined,
+  formData: FormData,
+): Promise<MentorFormState> {
+  const mentor = await requireMentor();
+  const result = await submitMentorRaisedPullRequest(mentor.id, {
+    organisationId: text(formData, "organisationId"),
+    pullRequestUrl: text(formData, "pullRequestUrl"),
+  });
+  if (!result.ok) {
+    return { formError: result.message, fieldErrors: result.fieldErrors };
+  }
+
+  revalidatePath("/mentor/raised-prs");
+  revalidatePath("/superadmin/raised-prs");
+  return {};
 }

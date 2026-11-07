@@ -31,11 +31,21 @@ export type AssignedPullRequest = {
   reviewState: ReviewState;
 };
 
+export type AssignedOrganisation = {
+  id: string;
+  name: string;
+  program: string;
+  websiteUrl: string;
+  repositoryUrl: string;
+  technologies: string[];
+};
+
 export type MentorOverview = {
   assignedStudents: number;
   assignedPullRequests: number;
   pendingReviews: number;
   reviewsWritten: number;
+  organisations: AssignedOrganisation[];
   recent: AssignedPullRequest[];
 };
 
@@ -44,8 +54,6 @@ export type MentorProfileView = {
   lastName: string;
   email: string;
   employeeId: string;
-  batch: string;
-  universityName: string;
   approvalStatus: MentorApprovalStatus;
   githubUsername: string | null;
 };
@@ -124,6 +132,31 @@ function pendingWhere(mentorId: string) {
   };
 }
 
+export async function listMentorOrganisations(
+  actorId: string,
+): Promise<MentorSuccess<AssignedOrganisation[]> | MentorError> {
+  const actor = await requireMentorActor(actorId);
+  if (!actor.ok) {
+    return actor;
+  }
+
+  return { ok: true, data: await assignedOrganisations(actor.data.mentorId) };
+}
+
+async function assignedOrganisations(mentorId: string): Promise<AssignedOrganisation[]> {
+  const rows = await db.mentorOrganisation.findMany({
+    where: { mentorId, organisation: { approved: true } },
+    orderBy: { organisation: { name: "asc" } },
+    select: {
+      organisation: {
+        select: { id: true, name: true, program: true, websiteUrl: true, repositoryUrl: true, technologies: true },
+      },
+    },
+  });
+
+  return rows.map((row) => row.organisation);
+}
+
 export async function overview(actorId: string): Promise<MentorSuccess<MentorOverview> | MentorError> {
   const actor = await requireMentorActor(actorId);
   if (!actor.ok) {
@@ -132,11 +165,13 @@ export async function overview(actorId: string): Promise<MentorSuccess<MentorOve
 
   const assigned = { mentorId: actor.data.mentorId, ...activeAssignment };
   const pending = pendingWhere(actor.data.mentorId);
-  const [assignedStudents, assignedPullRequests, pendingReviews, reviewsWritten, recent] = await Promise.all([
+  const [assignedStudents, assignedPullRequests, pendingReviews, reviewsWritten, organisations, recent] =
+    await Promise.all([
     db.studentProfile.count({ where: { assignments: { some: assigned } } }),
     db.mentorAssignment.count({ where: assigned }),
     db.mentorAssignment.count({ where: pending }),
     db.pRReview.count({ where: { mentorId: actor.data.mentorId } }),
+    assignedOrganisations(actor.data.mentorId),
     db.mentorAssignment.findMany({
       where: pending,
       orderBy: { createdAt: "asc" },
@@ -152,6 +187,7 @@ export async function overview(actorId: string): Promise<MentorSuccess<MentorOve
       assignedPullRequests,
       pendingReviews,
       reviewsWritten,
+      organisations,
       recent: recent.map((row) => toPullRequest(row.prSubmission)),
     },
   };
@@ -384,8 +420,6 @@ export async function getMentorProfile(actorId: string): Promise<MentorSuccess<M
     where: { id: actor.data.mentorId },
     select: {
       employeeId: true,
-      batch: true,
-      universityName: true,
       approvalStatus: true,
       user: {
         select: {
@@ -409,8 +443,6 @@ export async function getMentorProfile(actorId: string): Promise<MentorSuccess<M
       lastName: profile.user.lastName,
       email: profile.user.email,
       employeeId: profile.employeeId,
-      batch: profile.batch,
-      universityName: profile.universityName,
       approvalStatus: profile.approvalStatus,
       githubUsername: profile.user.githubAccount?.username ?? null,
     },

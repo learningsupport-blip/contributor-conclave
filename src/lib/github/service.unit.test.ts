@@ -447,4 +447,47 @@ describe("github service", () => {
       process.env.NEXT_PUBLIC_GITHUB_TOKEN = previousPublic;
     }
   });
+
+  it("loads the five most recently pushed public projects for an organisation", async () => {
+    const fetchImpl = vi.fn<GitHubFetcher>(async (input) => {
+      const url = String(input);
+      if (url.includes("/orgs/")) {
+        return jsonResponse({ message: "Not Found" }, 404);
+      }
+      return jsonResponse([
+        repository("older", "2026-01-01T00:00:00Z"),
+        repository("newest", "2026-03-01T00:00:00Z"),
+        repository("archived", "2026-04-01T00:00:00Z", { archived: true }),
+      ]);
+    });
+    const github = serviceWith(fetchImpl);
+
+    const result = await github.listActiveOrganisationProjects("https://github.com/kubernetes/kubernetes");
+
+    expect(String(fetchImpl.mock.calls[0]?.[0])).toContain("/orgs/kubernetes/repos?");
+    expect(String(fetchImpl.mock.calls[1]?.[0])).toContain("/users/kubernetes/repos?");
+    expect(result).toMatchObject({
+      ok: true,
+      data: [{ name: "newest" }, { name: "older" }],
+    });
+    expect(JSON.stringify(result)).not.toContain(token);
+  });
 });
+
+function repository(name: string, pushedAt: string, overrides: Record<string, unknown> = {}) {
+  return {
+    name,
+    description: `${name} description`,
+    html_url: `https://github.com/kubernetes/${name}`,
+    language: "Go",
+    stargazers_count: 3,
+    forks_count: 1,
+    updated_at: pushedAt,
+    pushed_at: pushedAt,
+    private: false,
+    fork: false,
+    archived: false,
+    open_issues_count: 2,
+    ...overrides,
+  };
+}

@@ -1,57 +1,74 @@
-import { CreateOrganisationCard } from "@/components/superadmin/create-organisation-card";
-import { CreateProjectCard } from "@/components/superadmin/create-project-card";
+import { GsocOrganisationList } from "@/components/superadmin/gsoc-organisation-list";
 import { ErrorState } from "@/components/ui/error-state";
 import { PageHeader } from "@/components/ui/page-header";
-import { requireSuperAdmin } from "@/lib/auth/authorization";
+import { requireScreen } from "@/lib/auth/authorization";
+import { readPage, readText } from "@/lib/admin/query";
+import { pageOrganisations } from "@/lib/superadmin/gsoc-catalog";
+import { listGsocOrganisations } from "@/lib/superadmin/gsoc-source";
 import { listOrganisations } from "@/lib/superadmin/organisations";
-import { listProjects } from "@/lib/superadmin/projects";
 
 export const metadata = { title: "Resource Management" };
 
-export default async function ResourceManagementPage() {
-  const actor = await requireSuperAdmin();
-  const [organisations, projects] = await Promise.all([
+export default async function ResourceManagementPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; q?: string }>;
+}) {
+  const actor = await requireScreen("resources");
+  const params = await searchParams;
+  const query = readText(params.q);
+  const [organisations, catalog] = await Promise.all([
     listOrganisations(actor.id),
-    listProjects(actor.id),
+    listGsocOrganisations(),
   ]);
+  const approvedNames = new Set(
+    organisations.ok ? organisations.data.map((organisation) => organisation.name.toLowerCase()) : [],
+  );
+  const gsocPage = catalog.ok
+    ? pageOrganisations(catalog.data.organisations, readPage(params.page), query)
+    : null;
 
   return (
     <main className="flex flex-col gap-6">
-      <PageHeader title="Resource Management" description="Resources for open source programs." />
-      <div className="flex flex-wrap gap-4">
-        <CreateOrganisationCard />
-        <CreateProjectCard
-          organisations={organisations.ok ? organisations.data.map((organisation) => ({ id: organisation.id, name: organisation.name })) : []}
-        />
-      </div>
+      <PageHeader
+        title="Resource Management"
+        description="Approve any GSoC organisation. Students see it when it shares a tech stack they choose."
+      />
       {!organisations.ok ? (
-        <ErrorState title="Organisations unavailable" message={organisations.message} />
-      ) : organisations.data.length > 0 ? (
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {organisations.data.map((organisation) => (
-            <li key={organisation.id} className="border border-ink/10 px-4 py-4 dark:border-paper/10">
-              <p className="font-medium">{organisation.name}</p>
-              <p className="mt-1 text-sm text-ink/70 dark:text-paper/70">{organisation.program}</p>
-              <p className="mt-2 text-sm">{organisation.technologies.join(", ")}</p>
-            </li>
-          ))}
-        </ul>
+        <ErrorState title="Approved organisations unavailable" message={organisations.message} />
       ) : null}
-      {!projects.ok ? (
-        <ErrorState title="Projects unavailable" message={projects.message} />
-      ) : projects.data.length > 0 ? (
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {projects.data.map((project) => (
-            <li key={project.id} className="border border-ink/10 px-4 py-4 dark:border-paper/10">
-              <p className="font-medium">{project.name}</p>
-              <p className="mt-1 text-sm text-ink/70 dark:text-paper/70">
-                {project.organisationName} · {project.program}
-              </p>
-              <p className="mt-2 text-sm">{project.technologies.join(", ")}</p>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      {catalog.ok && gsocPage ? (
+        <GsocOrganisationList
+          year={catalog.data.year}
+          page={gsocPage.page}
+          total={gsocPage.total}
+          pageSize={gsocPage.pageSize}
+          query={query}
+          organisations={gsocPage.items.map((organisation) => ({
+            name: organisation.name,
+            description: organisation.description,
+            category: organisation.category,
+            imageUrl: organisation.imageUrl,
+            imageBackground: organisation.imageBackground,
+            technologies: organisation.technologies,
+            sourceTechnologies: organisation.sourceTechnologies,
+            topics: organisation.topics,
+            years: organisation.years,
+            websiteUrl: organisation.websiteUrl,
+            codeRepositoryUrl: organisation.codeRepositoryUrl,
+            projectsUrl: organisation.projectsUrl,
+            ideasUrl: organisation.ideasUrl,
+            guideUrl: organisation.guideUrl,
+            projectCount: organisation.projectCount,
+            approved: approvedNames.has(organisation.name.toLowerCase()),
+          }))}
+        />
+      ) : (
+        <ErrorState
+          title="GSoC organisations unavailable"
+          message={catalog.ok ? "The GSoC organisation list could not be read." : catalog.message}
+        />
+      )}
     </main>
   );
 }

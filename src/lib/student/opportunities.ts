@@ -39,8 +39,9 @@ async function studentActor(userId: string): Promise<AdminSuccess<{ id: string }
 
 async function catalog(): Promise<OpportunityOrganisation[]> {
   return db.organisation.findMany({
+    where: { approved: true },
     orderBy: { name: "asc" },
-    take: 100,
+    take: 200,
     select: {
       id: true,
       name: true,
@@ -143,6 +144,7 @@ export async function getStudentOrganisation(
       websiteUrl: true,
       repositoryUrl: true,
       technologies: true,
+      approved: true,
       projects: {
         orderBy: { name: "asc" },
         select: {
@@ -156,7 +158,7 @@ export async function getStudentOrganisation(
       },
     },
   });
-  if (!organisation) {
+  if (!organisation?.approved) {
     return { ok: false, code: "invalid", message: "That organisation could not be found." };
   }
 
@@ -164,8 +166,9 @@ export async function getStudentOrganisation(
     where: { studentId: actor.data.id, projectId: { in: organisation.projects.map((project) => project.id) } },
     select: { projectId: true },
   });
+  const { approved: _approved, ...detail } = organisation;
 
-  return { ok: true, data: { ...organisation, startedProjectIds: started.map((work) => work.projectId) } };
+  return { ok: true, data: { ...detail, startedProjectIds: started.map((work) => work.projectId) } };
 }
 
 export async function startStudentProject(
@@ -182,9 +185,9 @@ export async function startStudentProject(
 
   const project = await db.project.findUnique({
     where: { id: projectId },
-    select: { id: true, organisationId: true },
+    select: { id: true, organisationId: true, organisation: { select: { approved: true } } },
   });
-  if (!project) {
+  if (!project?.organisation.approved) {
     return { ok: false, code: "invalid", message: "That project could not be found." };
   }
 

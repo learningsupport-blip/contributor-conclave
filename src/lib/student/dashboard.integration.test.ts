@@ -86,8 +86,6 @@ describe("student dashboard reads", () => {
         mentorProfile: {
           create: {
             employeeId: `emp-${suffix}`,
-            batch: "Batch 24",
-            universityName: "Example University",
           },
         },
         githubAccount: { create: { username: `grace-${suffix}` } },

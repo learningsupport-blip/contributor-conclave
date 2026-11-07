@@ -123,7 +123,7 @@ function ScorePanel({
           >
             {submission.title}
           </a>
-          <p className="mt-1 text-sm text-ink/60 dark:text-paper/60">
+          <p className="mt-1 text-sm text-ink/70 dark:text-paper/60">
             {submission.repository}#{submission.number}
           </p>
         </div>
@@ -133,7 +133,7 @@ function ScorePanel({
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {facts.map((fact) => (
           <div key={fact.label} className="border border-ink/10 px-3 py-3 dark:border-paper/15">
-            <dt className="text-xs tracking-wide text-ink/60 uppercase dark:text-paper/60">{fact.label}</dt>
+            <dt className="text-xs tracking-wide text-ink/70 uppercase dark:text-paper/60">{fact.label}</dt>
             <dd className="mt-1 text-lg font-semibold">{fact.value}</dd>
           </div>
         ))}
@@ -191,7 +191,7 @@ function ScorePanel({
           {submission.body ? (
             <p className="max-h-36 overflow-y-auto text-sm text-ink/80 dark:text-paper/80">{submission.body}</p>
           ) : (
-            <p className="text-sm text-ink/60 dark:text-paper/60">GitHub did not include a description.</p>
+            <p className="text-sm text-ink/70 dark:text-paper/60">GitHub did not include a description.</p>
           )}
           <form action={refreshAction}>
             <input type="hidden" name="pullRequestId" value={submission.id} />

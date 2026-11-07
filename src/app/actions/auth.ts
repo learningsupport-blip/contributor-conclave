@@ -102,7 +102,7 @@ export async function registerMentorAction(
     area: "AUTH",
   });
   return {
-    notice: "Your account was created. A super admin must approve it before you can log in.",
+    notice: "Account created",
   };
 }
 

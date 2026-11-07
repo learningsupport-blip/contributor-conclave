@@ -616,3 +616,23 @@ model Batch {
   @@index([universityId])
   @@map("batches")
 }
+
+/// Switches for the external pull-request analysis service.
+/// The service address and token stay in the server environment.
+model AnalysisServiceConfig {
+  id                String   @id
+  enabled           Boolean  @default(true)
+  quality           Boolean  @default(true)
+  mergeReadiness    Boolean  @default(true) @map("merge_readiness")
+  checks            Boolean  @default(true)
+  coaching          Boolean  @default(true)
+  suggestScores     Boolean  @default(true) @map("suggest_scores")
+  issueMatch        Int      @default(4) @map("issue_match")
+  fileMatch         Int      @default(4) @map("file_match")
+  descriptionWeight Int      @default(2) @map("description_weight")
+  checksWeight      Int      @default(6) @map("checks_weight")
+  sizeWeight        Int      @default(4) @map("size_weight")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("analysis_service_configs")
+}

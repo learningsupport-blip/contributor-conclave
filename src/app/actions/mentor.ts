@@ -102,6 +102,6 @@ export async function submitRaisedPullRequestAction(
   }
 
   revalidatePath("/mentor/raised-prs");
-  revalidatePath("/superadmin/raised-prs");
+  revalidatePath("/superadmin/pull-requests/mentors");
   return {};
 }

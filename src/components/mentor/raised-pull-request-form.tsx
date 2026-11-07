@@ -21,6 +21,10 @@ function FormMessages({ state }: { state: MentorFormState | undefined }) {
   if (!state?.formError) {
     return null;
   }
+  const fieldMessages = Object.values(state.fieldErrors ?? {}).flat();
+  if (fieldMessages.includes(state.formError)) {
+    return null;
+  }
   return (
     <p role="alert" className="text-sm text-red-700 dark:text-red-400">
       {state.formError}

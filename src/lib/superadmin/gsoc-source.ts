@@ -14,7 +14,7 @@ import {
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
-let cache: { expiresAt: number; value: AdminSuccess<GsocCatalog> } | null = null;
+let cache: { expiresAt: number; value: AdminSuccess<GsocCatalog> | AdminError } | null = null;
 
 export function clearGsocCatalogCache() {
   cache = null;

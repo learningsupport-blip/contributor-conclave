@@ -19,11 +19,12 @@ describe("signed-in navigation", () => {
     expect(labels(items)).toEqual([
       "Overview",
       "Resource Management",
+      "PR Management",
+      "Services",
       "General Management",
       "University Management",
       "Batch Management",
       "Mentor Management",
-      "Mentor Raised PRs",
       "Student Management",
       "Application Access",
       "Application Managed Roles",

@@ -1,4 +1,5 @@
-import { adminInvalid, requireSuperAdminActor, type AdminError, type AdminSuccess } from "@/lib/superadmin/access";
+import type { AdminError, AdminSuccess } from "@/lib/admin/access";
+import { adminInvalid, requireSuperAdminActor } from "@/lib/superadmin/access";
 import { db } from "@/lib/db";
 import { logError } from "@/lib/log";
 import type { GitHubResult, ValidatedPullRequest } from "@/lib/github/types";
@@ -20,7 +21,7 @@ export async function listRaisedPullRequests(
   actorId: string,
   pullRequests: PullRequestCheck = defaultGitHub,
 ): Promise<AdminSuccess<SuperadminRaisedPullRequest[]> | AdminError> {
-  const actor = await requireSuperAdminActor(actorId, "raised-prs");
+  const actor = await requireSuperAdminActor(actorId, "prs");
   if (!actor.ok) {
     return actor;
   }
@@ -33,7 +34,7 @@ export async function refreshRaisedPullRequestDetails(
   pullRequestId: string,
   pullRequests: PullRequestCheck = defaultGitHub,
 ): Promise<AdminSuccess<{ id: string }> | AdminError> {
-  const actor = await requireSuperAdminActor(actorId, "raised-prs");
+  const actor = await requireSuperAdminActor(actorId, "prs");
   if (!actor.ok) {
     return actor;
   }
@@ -56,7 +57,7 @@ export async function scoreRaisedPullRequest(
   pullRequestId: string,
   input: { clarity: string; scope: string; evidence: string; outcome: string; note: string },
 ): Promise<AdminSuccess<{ id: string; scores: RaisedPullRequestScores }> | AdminError> {
-  const actor = await requireSuperAdminActor(actorId, "raised-prs");
+  const actor = await requireSuperAdminActor(actorId, "prs");
   if (!actor.ok) {
     return actor;
   }

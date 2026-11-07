@@ -1,13 +1,13 @@
 import { Prisma } from "@/generated/prisma/client";
 
 import { toFieldErrors } from "@/lib/auth/validation";
-import { githubAccountFromRepositoryUrl } from "@/lib/github/active-projects";
 import { github as defaultGitHub } from "@/lib/github/service";
 import type { GitHubPullRequestDetails, GitHubResult, ValidatedPullRequest } from "@/lib/github/types";
 import { canonicalSubmission, pullRequestAuthorMatches } from "@/lib/student/submission-schema";
 import { db } from "@/lib/db";
 import { logError } from "@/lib/log";
 import { mentorInvalid, requireMentorActor, type MentorError, type MentorSuccess } from "@/lib/mentor/access";
+import { pullRequestMatchesOrganisation } from "@/lib/mentor/organisation-pull-request";
 import {
   averageScore,
   formatScore,
@@ -126,8 +126,15 @@ type StoredRow = {
 };
 
 function toView(row: StoredRow): RaisedPullRequestView {
-  const scored =
-    row.clarityScore !== null && row.scopeScore !== null && row.evidenceScore !== null && row.outcomeScore !== null;
+  const scores =
+    row.clarityScore !== null && row.scopeScore !== null && row.evidenceScore !== null && row.outcomeScore !== null
+      ? {
+          clarity: row.clarityScore,
+          scope: row.scopeScore,
+          evidence: row.evidenceScore,
+          outcome: row.outcomeScore,
+        }
+      : null;
   return {
     id: row.id,
     organisationId: row.organisationId,
@@ -149,16 +156,7 @@ function toView(row: StoredRow): RaisedPullRequestView {
     evidence: row.evidenceScore,
     outcome: row.outcomeScore,
     note: row.scoreNote ?? "",
-    overall: scored
-      ? formatScore(
-          averageScore({
-            clarity: row.clarityScore,
-            scope: row.scopeScore,
-            evidence: row.evidenceScore,
-            outcome: row.outcomeScore,
-          }),
-        )
-      : null,
+    overall: scores ? formatScore(averageScore(scores)) : null,
   };
 }
 
@@ -236,7 +234,7 @@ export async function submitMentorRaisedPullRequest(
       approved: true,
       mentorAssignments: { some: { mentorId: mentor.id } },
     },
-    select: { id: true, repositoryUrl: true },
+    select: { id: true, name: true, websiteUrl: true, repositoryUrl: true },
   });
   if (!organisation) {
     return mentorInvalid("Choose an approved organisation assigned to you.", {
@@ -244,9 +242,16 @@ export async function submitMentorRaisedPullRequest(
     });
   }
 
-  const account = githubAccountFromRepositoryUrl(organisation.repositoryUrl);
   const canonical = canonicalSubmission(parsed.data.pullRequestUrl);
-  if (!account || !canonical || canonical.repository.split("/")[0] !== account) {
+  const matchesOrganisation =
+    canonical !== null &&
+    pullRequestMatchesOrganisation({
+      organisationName: organisation.name,
+      websiteUrl: organisation.websiteUrl,
+      repositoryUrl: organisation.repositoryUrl,
+      repository: canonical.repository,
+    });
+  if (!matchesOrganisation || !canonical) {
     return mentorInvalid("Submit a pull request from the selected organisation's GitHub account.", {
       pullRequestUrl: ["Submit a pull request from the selected organisation's GitHub account."],
     });

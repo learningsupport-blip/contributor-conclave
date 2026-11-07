@@ -37,6 +37,10 @@ import {
 } from "@/lib/superadmin/mentors";
 import { recordObservedRequest } from "@/lib/superadmin/request-log";
 import { deleteManagedStudent } from "@/lib/superadmin/students";
+import { analyzeRaisedPullRequest } from "@/lib/superadmin/analyze-raised-pull-request";
+import { parseAnalysisServiceForm } from "@/lib/superadmin/analysis-rubric";
+import { saveAnalysisServiceSettings } from "@/lib/superadmin/analysis-service-settings";
+import type { PullRequestAnalysis } from "@/lib/superadmin/pull-request-analysis";
 import {
   refreshRaisedPullRequestDetails,
   scoreRaisedPullRequest,
@@ -816,11 +820,11 @@ export async function refreshRaisedPullRequestAction(
   _state: OrganisationFormState | undefined,
   formData: FormData,
 ): Promise<OrganisationFormState> {
-  const actor = await actorFor("raised-prs");
+  const actor = await actorFor("prs");
   const startedAt = Date.now();
   const result = await refreshRaisedPullRequestDetails(actor.id, text(formData, "pullRequestId"));
   await recordObservedRequest({
-    path: "/superadmin/raised-prs",
+    path: "/superadmin/pull-requests/mentors",
     method: "POST",
     startedAt,
     statusCode: result.ok ? 200 : 400,
@@ -833,7 +837,7 @@ export async function refreshRaisedPullRequestAction(
     return { formError: result.message };
   }
 
-  revalidatePath("/superadmin/raised-prs");
+  revalidatePath("/superadmin/pull-requests/mentors");
   revalidatePath("/mentor/raised-prs");
   return { saved: true };
 }
@@ -842,7 +846,7 @@ export async function scoreRaisedPullRequestAction(
   _state: OrganisationFormState | undefined,
   formData: FormData,
 ): Promise<OrganisationFormState> {
-  const actor = await actorFor("raised-prs");
+  const actor = await actorFor("prs");
   const startedAt = Date.now();
   const result = await scoreRaisedPullRequest(actor.id, text(formData, "pullRequestId"), {
     clarity: text(formData, "clarity"),
@@ -852,7 +856,7 @@ export async function scoreRaisedPullRequestAction(
     note: text(formData, "note"),
   });
   await recordObservedRequest({
-    path: "/superadmin/raised-prs",
+    path: "/superadmin/pull-requests/mentors",
     method: "POST",
     startedAt,
     statusCode: result.ok ? 200 : 400,
@@ -865,7 +869,72 @@ export async function scoreRaisedPullRequestAction(
     return { formError: result.message };
   }
 
-  revalidatePath("/superadmin/raised-prs");
+  revalidatePath("/superadmin/pull-requests/mentors");
   revalidatePath("/mentor/raised-prs");
+  return { saved: true };
+}
+
+export async function analyzeRaisedPullRequestAction(
+  pullRequestId: string,
+): Promise<{ analysis: PullRequestAnalysis } | { formError: string }> {
+  const actor = await actorFor("prs");
+  const startedAt = Date.now();
+  const result = await analyzeRaisedPullRequest(actor.id, pullRequestId);
+  await recordObservedRequest({
+    path: "/superadmin/pull-requests/mentors",
+    method: "POST",
+    startedAt,
+    statusCode: result.ok ? 200 : 400,
+    user: actor,
+    operation: result.ok ? "Requested pull request analysis" : "Pull request analysis failed",
+    area: "MENTOR",
+  });
+
+  if (!result.ok) {
+    return { formError: result.message };
+  }
+
+  return { analysis: result.data };
+}
+
+export async function saveAnalysisServiceAction(
+  _state: OrganisationFormState | undefined,
+  formData: FormData,
+): Promise<OrganisationFormState> {
+  const actor = await actorFor("services");
+  const startedAt = Date.now();
+  const settings = parseAnalysisServiceForm({
+    enabled: text(formData, "enabled"),
+    quality: text(formData, "quality"),
+    mergeReadiness: text(formData, "mergeReadiness"),
+    checks: text(formData, "checks"),
+    coaching: text(formData, "coaching"),
+    suggestScores: text(formData, "suggestScores"),
+    issueMatch: text(formData, "issueMatch"),
+    fileMatch: text(formData, "fileMatch"),
+    description: text(formData, "description"),
+    checksWeight: text(formData, "checksWeight"),
+    size: text(formData, "size"),
+  });
+  if (!settings) {
+    return { formError: "Enter each weight as a whole number from 0 to 10." };
+  }
+
+  const result = await saveAnalysisServiceSettings(actor.id, settings);
+  await recordObservedRequest({
+    path: "/superadmin/services/pr-analysis",
+    method: "POST",
+    startedAt,
+    statusCode: result.ok ? 200 : 400,
+    user: actor,
+    operation: result.ok ? "Updated pull request analysis settings" : "Pull request analysis settings failed",
+    area: "OTHER",
+  });
+
+  if (!result.ok) {
+    return { formError: result.message };
+  }
+
+  revalidatePath("/superadmin/services/pr-analysis");
   return { saved: true };
 }

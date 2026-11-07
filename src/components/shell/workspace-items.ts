@@ -23,7 +23,7 @@ function superadminNav(): NavItem[] {
 }
 
 function filterNav(items: NavItem[], screens: ReadonlySet<string>): NavItem[] {
-  return items.flatMap((item) => {
+  return items.flatMap((item): NavItem[] => {
     if ("children" in item) {
       const children = item.children.filter((child) => child.screen !== undefined && screens.has(child.screen));
       return children.length > 0 ? [{ ...item, children }] : [];

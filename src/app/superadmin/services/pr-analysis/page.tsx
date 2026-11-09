@@ -24,7 +24,7 @@ export default async function PullRequestAnalysisSettingsPage() {
       </p>
       <PageHeader
         title="PR Analysis"
-        description="Choose what the review service reports. The address and token are not edited here."
+        description="The server sends the pull request to the analysis service. The address and token are not edited here."
       />
       {settings.ok ? (
         <AnalysisServiceForm

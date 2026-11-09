@@ -9,6 +9,9 @@ import { listRaisedPullRequests } from "@/lib/superadmin/raised-pull-requests";
 
 export const metadata = { title: "Mentor PR Management" };
 
+// Gemini reviews often outlast a normal request, including a cold Cloud Run start.
+export const maxDuration = 180;
+
 export default async function MentorPullRequestManagementPage() {
   const actor = await requireScreen("prs");
   const submissions = await listRaisedPullRequests(actor.id);

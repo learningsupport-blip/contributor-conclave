@@ -136,6 +136,8 @@ Names only. Values belong in `.env` locally and in Secret Manager in production.
 | `DATABASE_POOL_MAX` | Optional pool size for one process. Default 5. Allowed range 1–10. |
 | `GITHUB_TOKEN` | Server-only GitHub personal access token used to read GitHub data. |
 | `MESSAGE_ENCRYPTION_KEY` | 32-byte key, base64-encoded, used to encrypt message bodies at rest. |
+| `PR_ANALYSIS_URL` | Server-only address of the pull-request analyzer. Local development uses `http://127.0.0.1:8080/review`. Cloud Run sets the deployed analyzer URL plus `/review`. |
+| `PR_ANALYSIS_TOKEN` | Server-only bearer token. It must match the analyzer's `ANALYSIS_TOKEN`. The browser never receives it. |
 | `AUTHOR_NAME` | Name shown in the footer. Public display text, not a credential. Leave empty until it is known. |
 | `AUTHOR_GITHUB_URL` | Author GitHub profile, `https://github.com/USERNAME`. The footer omits the link when this is empty or not a profile URL. |
 | `AUTHOR_LINKEDIN_URL` | Author LinkedIn profile, `https://www.linkedin.com/in/PROFILE`. The footer omits the link when this is empty or not a profile URL. |
@@ -198,9 +200,9 @@ Production path:
 
 GitHub → Cloud Build → Artifact Registry → Cloud Run → Cloud SQL
 
-A push to the production branch starts Cloud Build. The build publishes two images to Artifact Registry: the web server and a migrate image. The migrate job attaches to Cloud SQL, applies committed migrations, and finishes before the new Cloud Run revision receives traffic. The web service listens on port 8080, uses the same Cloud SQL instance, and reads `DATABASE_URL`, `GITHUB_TOKEN`, and `MESSAGE_ENCRYPTION_KEY` from Secret Manager.
+A push to the production branch starts Cloud Build. The build publishes two images to Artifact Registry: the web server and a migrate image. The migrate job attaches to Cloud SQL, applies committed migrations, and finishes before the new Cloud Run revision receives traffic. The web service listens on port 8080, uses the same Cloud SQL instance, and reads `DATABASE_URL`, `GITHUB_TOKEN`, `MESSAGE_ENCRYPTION_KEY`, and `PR_ANALYSIS_TOKEN` from Secret Manager. The deploy also sets `PR_ANALYSIS_URL` from the `pr-analyzer-service` URL and keeps the request timeout at 300 seconds so a Gemini review can finish.
 
-Cloud Run accepts unauthenticated HTTP so visitors can open the login page. Application sessions still authorize every protected page and mutation. That is separate from the runtime service account, which can use the Cloud SQL client role and read only those three secrets.
+Cloud Run accepts unauthenticated HTTP so visitors can open the login page. Application sessions still authorize every protected page and mutation. That is separate from the runtime service account, which can use the Cloud SQL client role and read the mounted secrets, including the shared analyzer token.
 
 The container runs as a non-root user. The image does not contain a database URL or a GitHub token. Roll back by deploying the previous web revision when the schema is still compatible. Do not run a down migration as part of deploy.
 

@@ -92,6 +92,8 @@ A Cloud Build trigger runs `cloudbuild.yml` on a push to the production branch. 
 | `_GITHUB_TOKEN_SECRET` | `contributor-conclave-github-token` | Secret Manager id for the GitHub token |
 | `_MESSAGE_KEY_SECRET` | `contributor-conclave-message-key` | Secret Manager id for message encryption |
 | `_SUPERADMIN_PASSWORD_SECRET` | `contributor-conclave-superadmin-password` | Secret Manager id for the initial super admin password |
+| `_PR_ANALYSIS_TOKEN_SECRET` | `pr-analyzer-token` | Secret Manager id shared with the analyzer. Cloud Run mounts it as `PR_ANALYSIS_TOKEN`. |
+| `_PR_ANALYSIS_SERVICE` | `pr-analyzer-service` | Cloud Run service whose URL, plus `/review`, becomes `PR_ANALYSIS_URL` |
 | `_MIN_INSTANCES` | `0` | Cloud Run minimum instances |
 | `_MAX_INSTANCES` | `10` | Cloud Run maximum instances. Keep this inside the Cloud SQL connection budget |
 | `_CONCURRENCY` | `40` | Requests accepted per instance |
@@ -142,7 +144,7 @@ Runtime service account `contributor-conclave-run@PROJECT_ID.iam.gserviceaccount
 | Role | Scope |
 | --- | --- |
 | `roles/cloudsql.client` | The Cloud SQL instance |
-| `roles/secretmanager.secretAccessor` | The three secrets above, not the whole project |
+| `roles/secretmanager.secretAccessor` | The web secrets, including `pr-analyzer-token`, not the whole project |
 
 Do not grant this account Cloud SQL admin, Secret Manager admin, or project owner.
 
@@ -277,6 +279,8 @@ Store these in Secret Manager and mount them as Cloud Run environment variables 
 | `GITHUB_TOKEN` | Web service |
 | `MESSAGE_ENCRYPTION_KEY` | Web service |
 | `SUPERADMIN_PASSWORD` | Web service, only to create the super admin on first start |
+| `PR_ANALYSIS_URL` | Web service. The deploy step sets this to the analyzer service URL plus `/review`. It is not a secret. |
+| `PR_ANALYSIS_TOKEN` | Web service. The same Secret Manager value the analyzer reads as `ANALYSIS_TOKEN`. The browser never receives it. |
 
 Local values live only in `.env`. `.env.example` documents the variable names and the local Docker URL. A Cloud SQL URL does not belong in that file.
 

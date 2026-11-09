@@ -79,11 +79,14 @@ export function AnalysisServiceForm({
       <Switch
         name="enabled"
         label="Service enabled"
-        text="AI Analysis runs only when this is on and the server has the service address."
+        text="AI Analysis runs only when this is on and the server has the service address and token."
         defaultChecked={settings.enabled}
       />
       <fieldset className="flex flex-col gap-3">
-        <legend className="mb-3 text-lg font-semibold">Aspects</legend>
+        <legend className="text-lg font-semibold">Aspects</legend>
+        <p className="mb-3 text-sm text-ink/70 dark:text-paper/70">
+          The review request sends the pull request only. The service runs quality, merge readiness, checks, and coaching, and it returns suggested scores.
+        </p>
         {aspects.map((aspect) => (
           <Switch
             key={aspect.name}

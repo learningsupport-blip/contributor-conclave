@@ -36,6 +36,135 @@ const metricLabel: Record<PullRequestAnalysis["insights"][number]["metric"], str
   general: "General",
 };
 
+const modeLabel = { gemini: "Gemini", rubric: "Rubric" } as const;
+const bandLabel = { low: "Low", medium: "Medium", high: "High" } as const;
+const criterionStatus = { met: "Met", partial: "Partial", missing: "Missing", unknown: "Unknown" } as const;
+const guidelineStatus = { pass: "Pass", fail: "Fail", unknown: "Unknown", not_applicable: "Not applicable" } as const;
+const relationLabel = { required: "Required", related: "Related", unrelated: "Unrelated", unknown: "Unknown" } as const;
+
+function formatPoint(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function AnalysisReview({
+  analysis,
+  onUseScores,
+}: {
+  analysis: PullRequestAnalysis;
+  onUseScores: () => void;
+}) {
+  const report = analysis.report;
+  const reportScores: { label: string; value: number }[] = [];
+  if (report) {
+    const candidates: [string, number | null][] = [
+      ["Overall", report.overall],
+      ["Issue fit", report.issueFit],
+      ["Change fit", report.changeFit],
+      ["Guidelines", report.guidelines],
+      ["Evidence", report.evidence],
+      ["Clarity", report.clarity],
+    ];
+    for (const [label, value] of candidates) {
+      if (value !== null) {
+        reportScores.push({ label, value });
+      }
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3" aria-live="polite">
+      <p className="text-sm">{analysis.summary}</p>
+      <p className="text-sm text-ink/70 dark:text-paper/70">
+        {modeLabel[analysis.analysisMode]}
+        {analysis.categoryLabel ? ` · ${analysis.categoryLabel}` : ""}
+        {analysis.mergeEstimate
+          ? ` · Merge estimate ${formatPoint(analysis.mergeEstimate.value)} (${bandLabel[analysis.mergeEstimate.band]})`
+          : ""}
+      </p>
+      {analysis.insights.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {analysis.insights.map((insight) => (
+            <li key={`${insight.metric}-${insight.title}`} className="border border-ink/10 px-3 py-3 dark:border-paper/15">
+              <p className="text-xs font-medium tracking-wide text-moss-800 uppercase dark:text-moss-200">{metricLabel[insight.metric]}</p>
+              <p className="mt-1 font-medium">{insight.title}</p>
+              <p className="mt-1 text-sm text-ink/75 dark:text-paper/75">{insight.detail}</p>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {analysis.mergeEstimate && analysis.mergeEstimate.factors.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {analysis.mergeEstimate.factors.map((factor) => (
+            <li key={`${factor.code}-${factor.detail}`} className="text-sm">
+              {factor.detail} ({factor.delta > 0 ? `+${factor.delta}` : factor.delta})
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {reportScores.length > 0 ? (
+        <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {reportScores.map((score) => (
+            <div key={score.label} className="border border-ink/10 px-3 py-2 dark:border-paper/15">
+              <dt className="text-xs tracking-wide text-ink/70 uppercase dark:text-paper/60">{score.label}</dt>
+              <dd className="mt-1 font-semibold">{formatPoint(score.value)}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {report && report.criteria.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {report.criteria.map((criterion) => (
+            <li key={criterion.text} className="text-sm">
+              <span className="font-medium">{criterionStatus[criterion.status]}.</span> {criterion.text}
+              {criterion.evidence ? ` ${criterion.evidence}` : ""}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {report && report.guidelineChecks.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {report.guidelineChecks.map((check) => (
+            <li key={check.rule} className="text-sm">
+              <span className="font-medium">{guidelineStatus[check.status]}.</span> {check.rule}
+              {check.evidence ? ` ${check.evidence}` : ""}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {report && report.files.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {report.files.map((file) => (
+            <li key={`${file.path}-${file.relation}`} className="text-sm">
+              <span className="font-medium">{file.path}</span> · {relationLabel[file.relation]}
+              {file.reason ? `. ${file.reason}` : ""}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {report && report.nextSteps.length > 0 ? (
+        <div>
+          <h4 className="text-sm font-semibold">Next steps</h4>
+          <ul className="mt-1 list-disc pl-5 text-sm">
+            {report.nextSteps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {analysis.suggestedScores ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 border border-moss-700/30 px-3 py-3 dark:border-moss-300/30">
+          <p className="text-sm">
+            Suggested scores: {SCORE_METRICS.map((metric) => `${metric.label} ${analysis.suggestedScores?.[metric.key]}`).join(" · ")}
+          </p>
+          <button type="button" className={quietButton} onClick={onUseScores}>
+            Use suggested scores
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function countLabel(value: number | null): string {
   return value === null ? "—" : value.toLocaleString("en-IN");
 }
@@ -147,7 +276,7 @@ function ScorePanel({
                 AI analysis
               </h3>
               <p className="mt-1 text-sm text-ink/70 dark:text-paper/70">
-                Ask the review service for insights. Suggested scores stay editable until you save them.
+                Ask the review service for a Gemini review. A cold start can take up to three minutes. Suggested scores stay editable until you save them.
               </p>
             </div>
             <button type="button" className={solidButton} onClick={analyze} disabled={analyzing} aria-busy={analyzing}>
@@ -159,35 +288,7 @@ function ScorePanel({
               {analysisError}
             </p>
           ) : null}
-          {analysis ? (
-            <div className="flex flex-col gap-3" aria-live="polite">
-              <p className="text-sm">{analysis.summary}</p>
-              {analysis.insights.length > 0 ? (
-                <ul className="flex flex-col gap-2">
-                  {analysis.insights.map((insight) => (
-                    <li key={`${insight.metric}-${insight.title}`} className="border border-ink/10 px-3 py-3 dark:border-paper/15">
-                      <p className="text-xs font-medium tracking-wide text-moss-800 uppercase dark:text-moss-200">
-                        {metricLabel[insight.metric]}
-                      </p>
-                      <p className="mt-1 font-medium">{insight.title}</p>
-                      <p className="mt-1 text-sm text-ink/75 dark:text-paper/75">{insight.detail}</p>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              {analysis.suggestedScores ? (
-                <div className="flex flex-wrap items-center justify-between gap-3 border border-moss-700/30 px-3 py-3 dark:border-moss-300/30">
-                  <p className="text-sm">
-                    Suggested scores:{" "}
-                    {SCORE_METRICS.map((metric) => `${metric.label} ${analysis.suggestedScores?.[metric.key]}`).join(" · ")}
-                  </p>
-                  <button type="button" className={quietButton} onClick={useSuggestedScores}>
-                    Use suggested scores
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
+          {analysis ? <AnalysisReview analysis={analysis} onUseScores={useSuggestedScores} /> : null}
           {submission.body ? (
             <p className="max-h-36 overflow-y-auto text-sm text-ink/80 dark:text-paper/80">{submission.body}</p>
           ) : (

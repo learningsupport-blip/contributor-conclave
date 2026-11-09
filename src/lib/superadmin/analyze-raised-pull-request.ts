@@ -33,6 +33,9 @@ export async function analyzeRaisedPullRequest(
   if (!config) {
     return adminInvalid("The analysis service is not connected yet.");
   }
+  if (!config.token) {
+    return adminInvalid("The analysis service token is not set.");
+  }
 
   const row = await db.mentorRaisedPullRequest.findUnique({
     where: { id: pullRequestId },
@@ -74,7 +77,6 @@ export async function analyzeRaisedPullRequest(
     },
     config,
     fetchImpl,
-    settings,
   );
   if (!analysis.ok) {
     logError("raised_pull_request_analysis_failed", { configured: true });

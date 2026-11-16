@@ -9,7 +9,7 @@ import {
   setMentorActiveAction,
   unassignMentorOrganisationAction,
 } from "@/app/actions/superadmin";
-import { buttonCorners, controlClass, focusRing } from "@/components/ui/styles";
+import { buttonCorners, focusRing } from "@/components/ui/styles";
 import type { ManagedMentor } from "@/lib/superadmin/mentor-model";
 
 const solidButton = `inline-flex h-10 items-center justify-center bg-zinc-950 px-4 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-950 ${buttonCorners} ${focusRing}`;
@@ -96,23 +96,25 @@ function AssignOrganisation({
   }
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-2">
+    <form action={formAction} className="flex flex-col gap-3">
       <input type="hidden" name="userId" value={userId} />
-      <label className="flex min-w-48 flex-1 flex-col gap-1 text-sm">
-        Approved organisation
-        <select name="organisationId" className={controlClass} defaultValue={organisations[0]?.id}>
-          {organisations.map((organisation) => (
-            <option key={organisation.id} value={organisation.id}>
-              {organisation.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <button type="submit" disabled={pending} className={solidButton}>
-        {pending ? "Please wait…" : "Assign"}
-      </button>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="text-sm font-medium">Approved organisations</legend>
+        <p className="text-sm text-ink/70 dark:text-paper/70">Select one or more. The mentor can raise a pull request in each assigned organisation.</p>
+        {organisations.map((organisation) => (
+          <label key={organisation.id} className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="organisationId" value={organisation.id} className={`size-4 ${focusRing}`} />
+            {organisation.name}
+          </label>
+        ))}
+      </fieldset>
+      <div>
+        <button type="submit" disabled={pending} className={solidButton}>
+          {pending ? "Please wait…" : "Assign selected"}
+        </button>
+      </div>
       {state?.formError ? (
-        <p role="alert" className="w-full text-sm text-red-700 dark:text-red-400">
+        <p role="alert" className="text-sm text-red-700 dark:text-red-400">
           {state.formError}
         </p>
       ) : null}

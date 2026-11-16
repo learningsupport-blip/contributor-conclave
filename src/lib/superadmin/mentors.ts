@@ -196,48 +196,79 @@ export async function assignMentorOrganisation(
   userId: string,
   organisationId: string,
 ): Promise<AdminSuccess<{ id: string }> | AdminError> {
+  return assignMentorOrganisations(actorId, userId, [organisationId]);
+}
+
+export async function assignMentorOrganisations(
+  actorId: string,
+  userId: string,
+  organisationIds: string[],
+): Promise<AdminSuccess<{ id: string }> | AdminError> {
   const actor = await requireSuperAdminActor(actorId, "mentors");
   if (!actor.ok) {
     return actor;
   }
 
   const mentor = await findMentor(userId);
-  if (!mentor?.mentorProfile || mentor.role !== "MENTOR") {
+  const profile = mentor?.mentorProfile;
+  if (!mentor || !profile || mentor.role !== "MENTOR") {
     return adminInvalid("Mentor not found.");
   }
 
-  if (mentor.mentorProfile.approvalStatus !== "APPROVED") {
+  if (profile.approvalStatus !== "APPROVED") {
     return adminInvalid("Approve this mentor before assigning an organisation.");
   }
 
-  if (!parseUuid(organisationId)) {
+  const requested = [...new Set(organisationIds.map((id) => id.trim()).filter(Boolean))];
+  if (requested.length === 0 || requested.some((id) => !parseUuid(id))) {
     return adminInvalid("Choose an approved organisation.");
   }
 
-  const organisation = await db.organisation.findUnique({
-    where: { id: organisationId },
-    select: { id: true, approved: true },
+  const organisations = await db.organisation.findMany({
+    where: { id: { in: requested }, approved: true },
+    select: { id: true },
   });
-  if (!organisation?.approved) {
+  if (organisations.length !== requested.length) {
     return adminInvalid("Choose an approved organisation.");
   }
 
-  const existing = mentor.mentorProfile.organisationAssignments.some(
-    (assignment) => assignment.organisation.id === organisation.id,
-  );
-  if (existing) {
-    return adminInvalid("This organisation is already assigned to this mentor.");
+  const assigned = new Set(profile.organisationAssignments.map((assignment) => assignment.organisation.id));
+  const additions = organisations.filter((organisation) => !assigned.has(organisation.id));
+  if (additions.length === 0) {
+    return adminInvalid(
+      requested.length === 1
+        ? "This organisation is already assigned to this mentor."
+        : "These organisations are already assigned to this mentor.",
+    );
   }
 
-  await db.mentorOrganisation.create({
-    data: {
-      mentorId: mentor.mentorProfile.id,
+  await db.mentorOrganisation.createMany({
+    data: additions.map((organisation) => ({
+      mentorId: profile.id,
       organisationId: organisation.id,
       assignedById: actor.data.id,
-    },
+    })),
   });
 
   return { ok: true, data: { id: mentor.id } };
+}
+
+export async function listAssignableOrganisations(
+  actorId: string,
+): Promise<AdminSuccess<{ id: string; name: string }[]> | AdminError> {
+  const actor = await requireSuperAdminActor(actorId, "mentors");
+  if (!actor.ok) {
+    return actor;
+  }
+
+  const organisations = await db.organisation.findMany({
+    where: { approved: true },
+    orderBy: { name: "asc" },
+    take: 200,
+    select: { id: true, name: true },
+  });
+
+  return { ok: true, data: organisations };
 }
 
 export async function unassignMentorOrganisation(

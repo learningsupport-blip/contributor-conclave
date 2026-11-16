@@ -30,7 +30,7 @@ import { projectSchema } from "@/lib/superadmin/project-validation";
 import { createProject } from "@/lib/superadmin/projects";
 import {
   approveMentor,
-  assignMentorOrganisation,
+  assignMentorOrganisations,
   deleteMentor,
   setMentorActive,
   unassignMentorOrganisation,
@@ -757,9 +757,8 @@ export async function deleteMentorAction(
   return {};
 }
 
-function organisationId(formData: FormData) {
-  const value = formData.get("organisationId");
-  return typeof value === "string" ? value : "";
+function organisationIds(formData: FormData) {
+  return formData.getAll("organisationId").filter((value): value is string => typeof value === "string");
 }
 
 export async function assignMentorOrganisationAction(
@@ -768,7 +767,7 @@ export async function assignMentorOrganisationAction(
 ): Promise<SuperAdminFormState> {
   const actor = await actorFor("mentors");
   const startedAt = Date.now();
-  const result = await assignMentorOrganisation(actor.id, mentorUserId(formData), organisationId(formData));
+  const result = await assignMentorOrganisations(actor.id, mentorUserId(formData), organisationIds(formData));
   await recordObservedRequest({
     path: "/superadmin/mentors",
     method: "POST",
@@ -786,6 +785,7 @@ export async function assignMentorOrganisationAction(
   revalidatePath("/superadmin/mentors");
   revalidatePath("/mentor");
   revalidatePath("/mentor/organisations");
+  revalidatePath("/mentor/raised-prs");
   return {};
 }
 
@@ -795,7 +795,7 @@ export async function unassignMentorOrganisationAction(
 ): Promise<SuperAdminFormState> {
   const actor = await actorFor("mentors");
   const startedAt = Date.now();
-  const result = await unassignMentorOrganisation(actor.id, mentorUserId(formData), organisationId(formData));
+  const result = await unassignMentorOrganisation(actor.id, mentorUserId(formData), organisationIds(formData)[0] ?? "");
   await recordObservedRequest({
     path: "/superadmin/mentors",
     method: "POST",
@@ -813,6 +813,7 @@ export async function unassignMentorOrganisationAction(
   revalidatePath("/superadmin/mentors");
   revalidatePath("/mentor");
   revalidatePath("/mentor/organisations");
+  revalidatePath("/mentor/raised-prs");
   return {};
 }
 

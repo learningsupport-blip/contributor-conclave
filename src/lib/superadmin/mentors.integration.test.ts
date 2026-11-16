@@ -7,6 +7,7 @@ import { listMentorOrganisations } from "@/lib/mentor/directory";
 import {
   approveMentor,
   assignMentorOrganisation,
+  assignMentorOrganisations,
   deleteMentor,
   listMentors,
   setMentorActive,
@@ -111,14 +112,30 @@ describe("mentor management", () => {
 
     const assigned = await assignMentorOrganisation(superadminId, mentorId, organisationId);
     expect(assigned.ok).toBe(true);
+    const secondOrganisation = await db.organisation.create({
+      data: {
+        name: `Second ${randomUUID()}`,
+        program: "GSOC",
+        websiteUrl: "https://second.example",
+        repositoryUrl: "https://github.com/example/second",
+        technologies: ["Go"],
+        approved: true,
+        createdById: superadminId,
+      },
+    });
+    const both = await assignMentorOrganisations(superadminId, mentorId, [organisationId, secondOrganisation.id]);
+    expect(both.ok).toBe(true);
     const visible = await listMentorOrganisations(mentorId);
     expect(visible.ok).toBe(true);
     if (visible.ok) {
-      expect(visible.data.map((organisation) => organisation.id)).toEqual([organisationId]);
+      expect(visible.data.map((organisation) => organisation.id).sort()).toEqual(
+        [organisationId, secondOrganisation.id].sort(),
+      );
     }
 
     const removed = await unassignMentorOrganisation(superadminId, mentorId, organisationId);
     expect(removed.ok).toBe(true);
+    await unassignMentorOrganisation(superadminId, mentorId, secondOrganisation.id);
     const afterRemoval = await listMentorOrganisations(mentorId);
     expect(afterRemoval.ok && afterRemoval.data).toEqual([]);
 
